@@ -72,6 +72,7 @@ const TOOLS = [
         edge_steps:       { type: 'array',   items: { type: 'string' }, description: 'Failure cases to handle — must be ≥ ceil(happy_path_steps.length / 2)' },
         regression_fence: { type: 'array',   items: { type: 'string' }, description: 'Behaviors that must not break' },
         context_debt:     { type: 'string',  description: 'Rationale for non-obvious decisions, security choices, deferred work' },
+        requires:         { type: 'array',   items: { type: 'string' }, description: 'IDs of specs this spec depends on (e.g. ["LS-2026-001"]). Use [] if none.' },
         output_path:      { type: 'string',  description: 'Optional output path. Auto-generated from domain and ID if omitted.' },
       },
       required: ['domain', 'owner', 'runtime', 'data_stores', 'authorized_files', 'forbidden_files', 'happy_path_steps', 'edge_steps', 'regression_fence', 'context_debt'],

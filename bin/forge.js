@@ -32,7 +32,7 @@ if (command === 'new') {
   const fs2   = require('fs');
   const path2 = require('path');
   const { newSpec, formatNew } = require('../forge/new');
-  const { interpret }          = require('../forge/interpret');
+  const { interpret, deriveEdgesFromHappyPath } = require('../forge/interpret');
 
   const rl  = readline.createInterface({ input: process.stdin, output: process.stdout });
   const ask = q => new Promise(res => rl.question(q, res));
@@ -273,7 +273,8 @@ if (command === 'new') {
     const minimum = Math.ceil(happy_path_steps.length / 2);
     let edge_steps = [];
     while (true) {
-      const res = await promptSteps('EDGE_CRITICAL_UNHAPPY_PATH — failure cases', [...hints.edge_steps], minimum, true);
+      const derivedEdges = deriveEdgesFromHappyPath(happy_path_steps);
+      const res = await promptSteps('EDGE_CRITICAL_UNHAPPY_PATH — failure cases', derivedEdges, minimum, true);
       if (res.action === 'refine') {
         const updated = await refine(description, config);
         description = updated.description; hints = updated.hints;

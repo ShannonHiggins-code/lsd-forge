@@ -58,12 +58,16 @@ function buildLogicFile(a) {
     ? a.context_debt.trim()
     : 'No context debt noted.';
 
+  const requires = Array.isArray(a.requires) && a.requires.length > 0
+    ? `[${a.requires.map(r => `'${r}'`).join(', ')}]`
+    : '[]';
+
   return [
     '---',
     `id: ${a.id}`,
     'version: 1.0.0',
     `domain: ${a.domain}`,
-    'requires: []',
+    `requires: ${requires}`,
     `owner: ${a.owner}`,
     `validated_against: ${today}`,
     '---',

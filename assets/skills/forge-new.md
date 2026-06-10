@@ -5,8 +5,9 @@ AI chat. The AI conducts the session — asking questions, interpreting intent, 
 from the accumulated context, and stress-testing the result before writing the file. The user
 never leaves the chat to fill in a form.
 
-After `forge-new` completes, the output is a lint-clean `.logic` file ready for RSC-AR hardening
-or immediate compilation into an agent payload.
+`forge-new` produces a lint-clean first draft. It closes by automatically transitioning into
+RSC-AR Phase 2 (Adversary) — the two skills together form a single continuous pipeline from
+intent to hardened spec.
 
 ---
 
@@ -14,7 +15,7 @@ or immediate compilation into an agent payload.
 
 - User says "forge new", "create a spec", "I want to spec out X", or describes a feature they want to build
 - Any time a new `.logic` file needs to be authored from scratch
-- As the first step before running the RSC-AR loop on a new feature
+- As the first step before the RSC-AR loop on a new feature
 
 Do not invoke for edits to an existing spec — that is a lint + edit flow, not an intake flow.
 
@@ -22,18 +23,19 @@ Do not invoke for edits to an existing spec — that is a lint + edit flow, not 
 
 ## Before starting — load project context
 
-Read `.lsd/config.json`. Extract these values for use throughout the session:
+Read `.lsd/config.json`. Extract:
 
 ```
 RUNTIME          config.stack.language + config.stack.framework
 AUTHORIZED       config.authorized   (paths the agent may touch)
 FORBIDDEN        config.forbidden    (paths the agent must never touch)
 OWNER_HINT       config.owner        (if present — pre-fill owner field)
-SPECS_DIR        config.specs_dir    (where to write the file — default: specs/)
+SPECS_DIR        config.specs_dir    (default: specs/)
+VERIFY_COMMAND   config.verify_command
 ```
 
-Also scan `specs/` for existing `.logic` files. Note the highest `LS-YYYY-NNN` ID in use —
-the new spec will increment from it.
+Call `forge_spec_list`. Keep the full result in context — you will need it in Phase 2 (file
+conflict check) and Phase 6 (dependency discovery).
 
 ---
 
@@ -47,8 +49,6 @@ Wait for the response. Do not prompt for domain, files, or steps.
 
 ### Interpret the description
 
-From the plain-language response, derive:
-
 | Field | How to derive |
 |-------|--------------|
 | Domain | Infer from the primary noun + verb (e.g. "password reset" → `auth/password-reset`) |
@@ -57,7 +57,7 @@ From the plain-language response, derive:
 | Likely authorized paths | Map the domain to the project's `AUTHORIZED` paths |
 | Security sensitivity | Flag if domain involves auth, payments, credentials, PII, or billing |
 
-Present your interpretation in a structured block:
+Present your interpretation:
 
 ```
 I read this as:
@@ -70,18 +70,29 @@ I read this as:
 Does this match what you have in mind? Correct anything before we go section by section.
 ```
 
-**Gate: do not proceed to Phase 2 until the user confirms or corrects the interpretation.**
+**Gate: do not proceed until the user confirms or corrects the interpretation.**
 
 ---
 
 ## PHASE 2: TARGET_BOUNDARIES
 
-Using the confirmed interpretation as context, propose the section content:
+### File conflict pre-check
+
+Before presenting your suggestions, scan the `forge_spec_list` results for any existing spec
+that authorizes any of the same paths you are about to propose. If a conflict exists:
+
+> "⚠ [path] is already authorized in spec [ID] ([domain]). Authorizing it here too will cause
+> `forge_validate` to flag a shared-authorization conflict. I suggest using a more specific
+> subpath, or confirm this overlap is intentional."
+
+Surface every conflict. Do not silently skip them.
+
+### Propose boundaries
 
 ```
 TARGET_BOUNDARIES
 
-  runtime: <from config or confirmed above>
+  runtime: <from config>
   data_stores: <services identified in Phase 1>
 
   Authorized files (files the agent may modify):
@@ -89,21 +100,15 @@ TARGET_BOUNDARIES
     - <supporting lib or helper path>
 
   Forbidden files (files the agent must never touch):
-    - <entries from FORBIDDEN plus any obvious off-limits paths for this domain>
+    - <entries from FORBIDDEN plus obvious off-limits paths for this domain>
 ```
 
-**Explain each suggestion** — connect it back to the description. Example: "I suggested
-`src/lib/auth/reset.ts` because your description mentions generating a token, which is logic
-that belongs in the auth library layer."
+**Explain each suggestion** — connect it back to what the user described.
 
-Ask: "Do these boundaries look right? Any files to add, remove, or change?"
-
-**Constraint — authorization compliance:**
-- `authorized_files` must only contain paths that fall within `AUTHORIZED`
-- If the user requests a path outside `AUTHORIZED`, surface it: *"That path is outside the
-  authorized boundary in config.json — adding it here would make the spec uncompilable unless
-  config is updated first. Should we update config, or use a different path?"*
-- `forbidden_files` must include all `FORBIDDEN` entries relevant to this domain
+**Constraint:** `authorized_files` must only contain paths within `AUTHORIZED`. If the user
+requests a path outside `AUTHORIZED`, surface it:
+> "That path is outside the authorized boundary in config.json — the spec will not compile
+> unless config is updated first. Should we update config, or use a different path?"
 
 **Gate: confirm boundaries before proceeding.**
 
@@ -114,9 +119,9 @@ Ask: "Do these boundaries look right? Any files to add, remove, or change?"
 Propose a numbered list of steps covering the full success flow. Each step must be:
 - **One discrete action** — not a paragraph, not a vague summary
 - **Observable** — someone reading it can verify whether it happened
-- **Actor-prefixed** — start with "User" or "System" to make the actor explicit
+- **Actor-prefixed** — start with "User" or "System"
 
-Derive the steps from the confirmed description and boundaries. Show them:
+Derive the steps from the confirmed description and boundaries:
 
 ```
 INTENT_HAPPY_PATH — proposed steps:
@@ -129,23 +134,21 @@ INTENT_HAPPY_PATH — proposed steps:
   5. User submits a new password; system validates the token, updates credentials, and
      invalidates the token.
 
-Any changes? You can add steps, remove steps, or reword any step.
+Any changes?
 ```
 
 ### Anti-sycophancy rule — ambiguous language
 
-If the user provides or approves a step containing any of these phrases, **do not accept it**:
+If the user provides or approves a step containing any of these phrases, **do not accept it**.
+Reject immediately with a specific rewrite offer:
 
 > handle appropriately, handle accordingly, as needed, as appropriate, process the request,
 > deal with, manage the error, validate input, ensure security, handle the error, if necessary,
 > when applicable, in some cases, etc., and so on, various, somehow
 
-Reject immediately with a specific alternative:
-
-> *"That step contains 'validate input' which is a banned phrase — it will fail lint because
-> an AI agent cannot act on it deterministically. Instead, try: 'System validates that the
-> email field is non-empty and matches RFC 5322 format; return 400 with a field-level error
-> if not.' Want me to rewrite it?"*
+> *"That step contains '[phrase]' which is a banned phrase — an AI agent cannot act on it
+> deterministically and it will fail lint. Instead try: '[specific rewrite]'. Want me to apply
+> that?"*
 
 **Gate: every step must be free of banned phrases before proceeding.**
 
@@ -153,10 +156,10 @@ Reject immediately with a specific alternative:
 
 ## PHASE 4: EDGE_CRITICAL_UNHAPPY_PATH
 
-**Derive edge cases directly from the confirmed happy path — do not use generic templates.**
+**Derive one edge case per happy path step — do not use generic templates.**
 
-For each happy path step, ask: *what is the most likely way this step fails?* Apply these
-transformation rules:
+For each step in the confirmed happy path, apply the transformation rule that matches it.
+Label each edge with the step it mirrors so the mapping is traceable.
 
 | Happy path step contains | Derive this edge case |
 |--------------------------|----------------------|
@@ -169,155 +172,201 @@ transformation rules:
 | Payment / Stripe / checkout | Provider returns decline — show user-facing error, do not create order or subscription record |
 | System redirects | Redirect target requires auth the user lacks — fall back to safe default, do not expose destination |
 
-Show the derived edges and explain which happy path step each one mirrors:
+If two steps trigger the same rule (e.g. two database writes), derive distinct edges that
+reference each step's specific data — do not collapse them into one generic "write fails" entry.
 
 ```
 EDGE_CRITICAL_UNHAPPY_PATH — derived from your happy path:
 
-  1. (from step 1) Email field is empty or malformed — return a 400 with a field-level
-     error message, do not attempt token generation.
-  2. (from step 2) Database write for the reset token fails — return 500, do not send
-     the email, do not leave a partial token record.
+  1. (from step 1) Email field is empty or malformed — return 400 with a field-level error,
+     do not attempt token generation.
+  2. (from step 2) Database write for the reset token fails — return 500, do not send the
+     email, do not leave a partial token record.
   3. (from step 3) Email service is unavailable — return an explicit error to the caller,
      do not mark the reset as initiated or report success.
-  4. (from step 5) Token is expired or has already been used — return a specific error
-     message and redirect the user to /forgot-password to re-initiate.
+  4. (from step 5) Token is expired or already used — return a specific error message and
+     redirect the user to /forgot-password to re-initiate.
 
 Minimum required: ceil(5 / 2) = 3. You have 4 — above minimum.
 ```
 
-**Minimum enforcement:** The spec requires `ceil(happy_steps / 2)` edge steps. Count out loud.
-If the derived edges fall short, propose additional generic failure modes until the minimum is met.
-
-**Gate: confirm edge cases, including the count, before proceeding.**
+**Gate: confirm edge cases and the count before proceeding.**
 
 ---
 
 ## PHASE 5: REGRESSION_FENCE
 
-Propose what must not break as a result of implementing this spec. Draw from:
-- Other specs in `specs/` that share the same domain
-- Services or endpoints mentioned in the happy path
-- The `verify_command` in config (running it should still pass)
+Propose what must not break. Draw from:
+- Specs in `forge_spec_list` results that share the same domain
+- Endpoints or services mentioned in the happy path
+- `VERIFY_COMMAND` from config
 
 ```
 REGRESSION_FENCE — what must not break:
 
   - Existing authenticated sessions must remain valid after this change.
   - The /api/auth/logout endpoint must continue to clear cookies correctly.
-  - <verify_command> must continue to exit 0.
+  - <VERIFY_COMMAND> must continue to exit 0.
 ```
 
 Ask: "Anything else that must be preserved?"
 
 ---
 
-## PHASE 6: CONTEXT_DEBT_NOTE
+## PHASE 6: SPEC DEPENDENCIES
 
-**This section is not optional for security-sensitive domains.** If the domain involves auth,
-payments, credentials, PII, or billing, explicitly prompt:
+Call `forge_spec_list` results (already loaded). Scan for specs whose domain overlaps with
+or is a prerequisite of this spec's domain.
 
-> "This is a security-sensitive spec. The CONTEXT_DEBT_NOTE must document the rationale for
-> any non-obvious security decisions — token expiry duration, rate limits, enumeration
-> prevention, retry behaviour. What's the reasoning behind the key decisions here?"
+Present any relevant specs:
 
-For non-sensitive domains, ask once: "Any non-obvious decisions, deferred work, or constraints
-worth documenting for the agent?"
+```
+Existing specs in related domains:
 
-If the user says nothing: write a minimal note referencing the security property most relevant
-to the domain (e.g. "Token expiry set to 15 minutes — balances usability against replay window.
-Enumeration prevented by returning success regardless of email existence.").
+  LS-2026-001  auth/login-redirect    — handles session auth and redirect flow
+  LS-2026-042  auth/session-sync      — handles session token synchronisation
 
-**Do not leave this section empty for auth or payments domains.**
+Does this spec depend on either of these? If the feature you're building assumes the behaviour
+defined in another spec, list it in requires: [].
+
+Enter spec IDs to list as dependencies, or press Enter to skip:
+```
+
+If the user identifies dependencies, record them as `requires: ["LS-2026-001"]`.
+If none, record `requires: []`.
+
+**Gate: confirm dependencies before proceeding.**
 
 ---
 
-## PHASE 7: ADVERSARIAL SELF-CHECK
+## PHASE 7: CONTEXT_DEBT_NOTE
 
-Before writing the file, conduct a self-adversarial review. Check each item. Mark PASS or FAIL
-with one-line justification. Do not skip any item.
+**This section is not optional for security-sensitive domains.** If the domain involves auth,
+payments, credentials, PII, or billing:
+
+> "This is a security-sensitive spec. CONTEXT_DEBT_NOTE must document the rationale for
+> non-obvious security decisions — token expiry duration, rate limits, enumeration prevention,
+> retry behaviour. What is the reasoning behind the key decisions here?"
+
+For non-sensitive domains: "Any non-obvious decisions, deferred work, or constraints worth
+documenting for the agent?"
+
+If the user says nothing, write a minimal note from the domain context. **Do not leave empty
+for auth or payments domains.**
+
+---
+
+## PHASE 8: ADVERSARIAL SELF-CHECK
+
+Two layers. Both must pass before writing.
+
+### Layer A — Structural compliance
 
 ```
-Adversarial self-check:
-
   [ ] All authorized_files paths fall within config.authorized
   [ ] No forbidden_files path is referenced in any step
   [ ] Every external call in the happy path has a corresponding edge case
-  [ ] Every edge case maps to a specific happy path step (no floating generics)
-  [ ] Zero banned phrases across all steps (checked above in Phase 3 gate)
-  [ ] CONTEXT_DEBT_NOTE is non-empty if domain is security-sensitive
-  [ ] Edge step count ≥ ceil(happy step count / 2) — count both
-  [ ] No step says what to build rather than what the system does (no implementation details)
+  [ ] Every edge case labels which happy path step it mirrors
+  [ ] Zero banned phrases across all steps
+  [ ] CONTEXT_DEBT_NOTE is non-empty for security-sensitive domains
+  [ ] Edge step count ≥ ceil(happy step count / 2) — count both out loud
+  [ ] No step describes implementation (no "create a React component", no "add a database column")
 ```
 
-If any item is FAIL, fix it before proceeding. State what changed.
+### Layer B — Agent perspective
 
-**If all items PASS:** state "Adversarial check complete — zero issues. Proceeding to write."
+Read the entire spec as if you are the AI coding agent about to implement it. Answer each:
+
+```
+  [ ] Can I implement every happy path step without making a design decision not stated
+      in the spec? If any step requires a judgment call, it is under-specified — name it.
+
+  [ ] Does every edge case give me both the exact trigger condition AND the exact system
+      response? "Handle gracefully" is not a response. A status code, a redirect, a log
+      entry — these are. Flag any edge case that leaves the response unspecified.
+
+  [ ] Are authorization boundaries as tight as they can be? "src/" is not tighter than
+      "src/auth/reset/". If a broader path is listed, confirm it is intentional.
+
+  [ ] Is every REGRESSION_FENCE item something I can verify? "Nothing should break" is not
+      verifiable. "forge test must exit 0" is. Rewrite any item that is not verifiable.
+
+  [ ] Would I need to read any file outside authorized_files to understand the full feature?
+      If yes, that file should be listed as authorized (read-only) or the step is missing context.
+```
+
+Fix every FAIL before proceeding. State each change.
+
+**Only when both layers show all PASS:** "Adversarial check complete. Proceeding to write."
 
 ---
 
-## PHASE 8: WRITE AND VERIFY
+## PHASE 9: WRITE AND VERIFY
 
-Call the `forge_new` MCP tool with all confirmed answers:
+Call `forge_new` with all confirmed answers:
 
 ```json
 {
-  "domain": "<confirmed domain>",
-  "owner": "<confirmed owner>",
-  "runtime": "<confirmed runtime>",
-  "data_stores": "<confirmed stores>",
+  "domain": "<confirmed>",
+  "owner": "<confirmed>",
+  "runtime": "<confirmed>",
+  "data_stores": "<confirmed>",
   "authorized_files": ["<...>"],
   "forbidden_files": ["<...>"],
-  "happy_path_steps": ["<step 1>", "<step 2>", "..."],
-  "edge_steps": ["<edge 1>", "<edge 2>", "..."],
+  "happy_path_steps": ["<...>"],
+  "edge_steps": ["<...>"],
   "regression_fence": ["<...>"],
-  "context_debt": "<confirmed note>"
+  "context_debt": "<confirmed>",
+  "requires": ["<LS-YYYY-NNN>"]
 }
 ```
 
-After `forge_new` returns, call `forge_lint` on the output file path.
+Call `forge_lint` on the output file. If lint fails, return to the specific section, fix, re-lint.
 
-**The session is not complete until `forge_lint` exits 0.**
+Call `forge_validate`. Surface any cross-spec conflicts found. If a conflict is critical, fix
+the spec before continuing. If it is a warning, note it for the user.
 
-If lint fails:
-- Return to the specific section that failed
-- Fix the issue
-- Re-run `forge_lint`
-- Repeat until clean
+**The session is not complete until forge_lint exits 0.**
 
-On success, report:
+---
+
+## PHASE 10: RSC-AR HANDOFF
+
+Do not stop after a clean lint. The forge-new output is a first draft. Transition automatically:
 
 ```
 Spec written: specs/LS-YYYY-NNN-<slug>.logic
-Lint: clean
+forge_lint:    clean
+forge_validate: <result>
 
-Next step: run the RSC-AR loop to harden this spec before compiling it into an agent payload.
-Invoke: read .lsd/skills/rsc-ar.md and run Phase 1 on the spec above.
+Transitioning to RSC-AR adversarial hardening — forge-new → RSC-AR is one pipeline.
 ```
+
+Read `.lsd/skills/rsc-ar.md`.
+
+**Skip RSC-AR Phase 1.** The spec you just wrote IS the Phase 1 output. Begin at **Phase 2
+(Adversary)** using the spec content as the draft to attack. Run the full adversarial checklist
+against it and report findings.
+
+Wait for the user to say "Execute Phase 3" before resolving. The RSC-AR gates still apply.
 
 ---
 
 ## Conversation principles
 
-**One section at a time.** Do not ask about steps and edge cases in the same message. Each
-phase gets its own exchange.
+**One section at a time.** Each phase is its own exchange.
 
-**Explain, don't just list.** When proposing content, connect it to what the user described.
-"I suggested X because you mentioned Y" builds trust and surfaces mismatches.
+**Explain, don't just list.** Connect every suggestion to what the user described.
 
-**Push back on vague answers.** If the user says "just add the usual edge cases" — that is not
-acceptable. Ask which specific failures they want covered. Vague answers produce vague specs
-that fail lint and give agents no deterministic behaviour to implement.
+**Push back on vague answers.** "Just add the usual edge cases" is not an answer. Ask which
+specific failures they want covered.
 
-**The spec is for the agent, not the user.** Every step must be something an AI coding agent
-can execute without asking a follow-up question. If you would need to ask, the step is not
-specific enough.
+**The spec is for the agent, not the user.** Every step must be executable without a follow-up
+question. If you would need to ask, the step is not specific enough.
 
 ---
 
 ## Ingestion template
-
-Paste this to start a `forge-new` session:
 
 ```
 Read .lsd/skills/forge-new.md and .lsd/config.json. I want to author a new .logic spec.
