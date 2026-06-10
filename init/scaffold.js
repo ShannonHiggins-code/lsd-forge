@@ -18,6 +18,7 @@ function writeLsdDir(projectRoot, config) {
   writeConfig(lsdDir, config);
   writeOnboarding(lsdDir, config);
   copySkills(skillsDir);
+  copyCommands(projectRoot);
   writeRegistryShell(lsdDir, config);
 }
 
@@ -47,6 +48,19 @@ function copySkills(skillsDir) {
   for (const file of fs.readdirSync(srcDir)) {
     if (file.endsWith('.md')) {
       fs.copyFileSync(path.join(srcDir, file), path.join(skillsDir, file));
+    }
+  }
+}
+
+function copyCommands(projectRoot) {
+  const srcDir  = path.join(ASSETS_DIR, 'commands');
+  const destDir = path.join(projectRoot, '.claude', 'commands');
+  if (!fs.existsSync(srcDir)) return;
+  if (!fs.existsSync(destDir)) fs.mkdirSync(destDir, { recursive: true });
+  for (const file of fs.readdirSync(srcDir)) {
+    if (file.endsWith('.md')) {
+      const dest = path.join(destDir, file);
+      if (!fs.existsSync(dest)) fs.copyFileSync(path.join(srcDir, file), dest);
     }
   }
 }
