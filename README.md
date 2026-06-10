@@ -65,6 +65,65 @@ Also installs:
 
 ---
 
+## Adopting into a mature application
+
+The wrong approach is backfilling specs for everything before using the tool — that is months of work and kills adoption before it starts. The right approach is to spec forward from a date and triage backward by risk.
+
+### Phase 1 — Install and discover (Day 1, ~30 min)
+
+```bash
+npm install lsd-forge --save-dev
+npx forge init
+```
+
+The connected AI reads `.lsd/onboarding.md`, runs the discovery protocol, and populates the registry — every service, data store, API surface, and posture file gets mapped before anything is authored.
+
+```bash
+forge status      # see what was discovered
+forge coverage    # expect 0% — that is fine
+```
+
+### Phase 2 — Triage by risk (Week 1)
+
+Do not spec alphabetically. Work with the AI to rank the registry by blast radius:
+
+| Priority | Service type | Why |
+|----------|-------------|-----|
+| 1st | Auth / session | Security blast radius |
+| 2nd | Payments / billing | Compliance and irreversibility |
+| 3rd | Data writes | Cannot undo a bad migration |
+| 4th | Public APIs | External contracts |
+| 5th | Background jobs | Silent failure surface |
+| Last | Read-only views | Lowest risk |
+
+Run `forge new` for the top 5. That is enough to validate the workflow and build team muscle memory before going broader.
+
+### Phase 3 — Set a low CI threshold and raise it quarterly
+
+```bash
+forge coverage --threshold 20   # week 1
+forge coverage --threshold 40   # month 3
+forge coverage --threshold 80   # month 6
+```
+
+Starting at 0% threshold means the gate is present but not blocking. Every quarter it gets tighter.
+
+### Phase 4 — The spec-forward rule (ongoing)
+
+Pick a date — the **spec line**. From that date:
+
+- **New feature** → `forge new` before a line of code is written
+- **Change to a specced service** → update the spec first, lint must pass
+- **Change to an unspecced service** → author the spec as part of the ticket
+
+The pre-commit hook only fires on staged `.logic` files. Existing unspecced code is never blocked — only new and modified specs are gated.
+
+### The coverage target
+
+The goal for a mature application is not 100% coverage. It is 100% coverage of the risk surface and zero unspecced new work. A ten-year-old stable read service with no spec is fine. A new payment flow with no spec is not.
+
+---
+
 ## The .logic file format
 
 A `.logic` file is YAML front matter followed by five required markdown sections. It is the authoritative brief for an AI agent — machine-verifiable, not a comment.
