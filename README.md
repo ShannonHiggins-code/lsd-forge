@@ -28,15 +28,28 @@ npm install lsd-forge --save-dev
 
 # 2. Bootstrap — run once per project
 npx forge init
+```
 
-# 3. Check integration health
+Open a new session and paste this prompt to your AI:
+
+```
+Read .lsd/onboarding.md and execute the discovery protocol in full.
+Map every service, app, package, data store, and AI posture file in this project.
+Populate .lsd/registry.json with what you find.
+Report your findings before touching anything else.
+```
+
+```bash
+# 3. See what was discovered and where the gaps are
 forge status
+forge coverage
+forge validate
 
-# 4. Author a spec using the RSC-AR loop (see .lsd/skills/rsc-ar.md)
-# then lint it
+# 4. Author a spec (interactive wizard)
+forge new
+
+# 5. Lint and compile to an agent payload
 forge lint specs/my-spec.logic
-
-# 5. Compile to an agent payload
 forge compile specs/my-spec.logic
 ```
 
@@ -76,11 +89,21 @@ npm install lsd-forge --save-dev
 npx forge init
 ```
 
-The connected AI reads `.lsd/onboarding.md`, runs the discovery protocol, and populates the registry — every service, data store, API surface, and posture file gets mapped before anything is authored.
+Then open a new session in the project and paste this prompt to your AI:
+
+```
+Read .lsd/onboarding.md and execute the discovery protocol in full.
+Map every service, app, package, data store, and AI posture file in this project.
+Populate .lsd/registry.json with what you find.
+Report your findings before touching anything else.
+```
+
+The AI maps everything and reports back. Then run:
 
 ```bash
 forge status      # see what was discovered
 forge coverage    # expect 0% — that is fine
+forge validate    # check for any cross-service collisions
 ```
 
 ### Phase 2 — Triage by risk (Week 1)
