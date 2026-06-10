@@ -8,7 +8,7 @@ const ASSETS_DIR = path.join(__dirname, '..', 'assets');
 /**
  * Create the .lsd/ directory tree and write all generated files.
  */
-function writeLsdDir(projectRoot, config) {
+function writeLsdDir(projectRoot, config, postureFiles) {
   const lsdDir    = path.join(projectRoot, '.lsd');
   const skillsDir = path.join(lsdDir, 'skills');
 
@@ -18,8 +18,8 @@ function writeLsdDir(projectRoot, config) {
   writeConfig(lsdDir, config);
   writeOnboarding(lsdDir, config);
   copySkills(skillsDir);
-  copyCommands(projectRoot);
   writeRegistryShell(lsdDir, config);
+  return installShortcuts(projectRoot, postureFiles || []);
 }
 
 function writeConfig(lsdDir, config) {
@@ -52,17 +52,84 @@ function copySkills(skillsDir) {
   }
 }
 
-function copyCommands(projectRoot) {
+// ── Tool-specific shortcut installers ─────────────────────────────────────────
+// Each installer writes the forge-new entry point for one AI tool.
+// Returns the human-readable label for the init log, or null if already present.
+
+function installClaudeCommands(projectRoot) {
   const srcDir  = path.join(ASSETS_DIR, 'commands');
   const destDir = path.join(projectRoot, '.claude', 'commands');
-  if (!fs.existsSync(srcDir)) return;
+  if (!fs.existsSync(srcDir)) return null;
   if (!fs.existsSync(destDir)) fs.mkdirSync(destDir, { recursive: true });
+  let installed = 0;
   for (const file of fs.readdirSync(srcDir)) {
-    if (file.endsWith('.md')) {
-      const dest = path.join(destDir, file);
-      if (!fs.existsSync(dest)) fs.copyFileSync(path.join(srcDir, file), dest);
-    }
+    if (!file.endsWith('.md')) continue;
+    const dest = path.join(destDir, file);
+    if (!fs.existsSync(dest)) { fs.copyFileSync(path.join(srcDir, file), dest); installed++; }
   }
+  return installed > 0 ? '.claude/commands/forge-new.md  → /forge-new' : null;
+}
+
+function installCursorRules(projectRoot) {
+  const srcDir  = path.join(ASSETS_DIR, 'cursor-rules');
+  const destDir = path.join(projectRoot, '.cursor', 'rules');
+  if (!fs.existsSync(srcDir)) return null;
+  if (!fs.existsSync(destDir)) fs.mkdirSync(destDir, { recursive: true });
+  let installed = 0;
+  for (const file of fs.readdirSync(srcDir)) {
+    const dest = path.join(destDir, file);
+    if (!fs.existsSync(dest)) { fs.copyFileSync(path.join(srcDir, file), dest); installed++; }
+  }
+  return installed > 0 ? '.cursor/rules/forge-new.mdc   → @forge-new' : null;
+}
+
+function installWindsurfRules(projectRoot) {
+  const srcDir  = path.join(ASSETS_DIR, 'windsurf-rules');
+  const destDir = path.join(projectRoot, '.windsurf', 'rules');
+  if (!fs.existsSync(srcDir)) return null;
+  if (!fs.existsSync(destDir)) fs.mkdirSync(destDir, { recursive: true });
+  let installed = 0;
+  for (const file of fs.readdirSync(srcDir)) {
+    if (!file.endsWith('.md')) continue;
+    const dest = path.join(destDir, file);
+    if (!fs.existsSync(dest)) { fs.copyFileSync(path.join(srcDir, file), dest); installed++; }
+  }
+  return installed > 0 ? '.windsurf/rules/forge-new.md  → Windsurf Cascade rule' : null;
+}
+
+// Map posture file patterns to their shortcut installer
+const TOOL_SHORTCUTS = [
+  {
+    // Claude Code — always install; most LSD FORGE users run it from Claude Code
+    detect:  () => true,
+    install: installClaudeCommands,
+  },
+  {
+    // Cursor
+    detect:  (pf) => pf.some(f => f.includes('.cursor')),
+    install: installCursorRules,
+  },
+  {
+    // Windsurf Cascade
+    detect:  (pf) => pf.some(f => f.includes('.windsurf')),
+    install: installWindsurfRules,
+  },
+];
+
+/**
+ * Install forge-new shortcuts for every detected AI tool.
+ * @returns {string[]} labels of shortcuts that were installed
+ */
+function installShortcuts(projectRoot, postureFiles) {
+  const installed = [];
+  for (const tool of TOOL_SHORTCUTS) {
+    if (!tool.detect(postureFiles)) continue;
+    try {
+      const label = tool.install(projectRoot);
+      if (label) installed.push(label);
+    } catch (_) {}
+  }
+  return installed;
 }
 
 function writeRegistryShell(lsdDir, config) {
@@ -181,4 +248,4 @@ fi
 `;
 }
 
-module.exports = { writeLsdDir, scaffoldSpecs, patchPackageJson, installPreCommitHook };
+module.exports = { writeLsdDir, scaffoldSpecs, patchPackageJson, installPreCommitHook, installShortcuts };

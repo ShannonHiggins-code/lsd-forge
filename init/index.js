@@ -57,8 +57,9 @@ function init(projectRoot) {
 
   log('\n  Scaffolding .lsd/...');
 
+  let shortcuts = [];
   try {
-    writeLsdDir(projectRoot, config);
+    shortcuts = writeLsdDir(projectRoot, config, postureFiles);
   } catch (err) {
     return { ok: false, error: `Failed to write .lsd/: ${err.message}` };
   }
@@ -67,6 +68,10 @@ function init(projectRoot) {
   log('  ✓ .lsd/config.json        — authorization map and oracle');
   log('  ✓ .lsd/registry.json      — resource registry (AI populates on first session)');
   log('  ✓ .lsd/skills/            — universal skill kit');
+  if (shortcuts.length > 0) {
+    log('\n  forge-new shortcuts installed:');
+    for (const s of shortcuts) log(`  ✓ ${s}`);
+  }
 
   // ── Scaffold specs/ ─────────────────────────────────────────────────────────
 
