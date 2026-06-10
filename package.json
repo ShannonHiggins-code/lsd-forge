@@ -20,6 +20,11 @@
     "lint": "node bin/forge.js lint",
     "lint:ci": "node bin/forge.js lint --plain --strict"
   },
+  "author": {
+    "name": "Shannon Higgins",
+    "email": "shannonhiggins@outlook.com",
+    "url": "https://gitlab.com/nagashi-group"
+  },
   "keywords": ["ai", "requirements", "spec", "linter", "logic-spec", "lsd", "forge", "agent"],
   "license": "MIT",
   "dependencies": {

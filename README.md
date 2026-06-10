@@ -381,6 +381,16 @@ module.exports = {
 
 ---
 
+## Author
+
+**Shannon Higgins** — Nagashi Limited, Carson City, NV
+
+Questions, adoption guidance, or collaboration: [shannonhiggins@outlook.com](mailto:shannonhiggins@outlook.com)
+
+Built at [Nagashi Limited](https://gitlab.com/nagashi-group) — the holding company behind the Authori product suite.
+
+---
+
 ## License
 
 MIT
