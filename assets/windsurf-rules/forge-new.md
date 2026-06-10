@@ -1,9 +1,14 @@
 ---
 trigger: user_initiated
-description: Guided .logic spec authoring session in chat
+description: Author and harden a .logic spec in chat, then compile it to an agent payload. This session specs and hardens only — a second session does the implementation.
 ---
 
-# forge-new
+# forge-new — Guided Spec Authoring
+
+**This session authors and hardens the spec. A second session implements.**
+When complete, you will receive a compiled payload to paste into a new agent session.
+
+---
 
 When the user wants to create a new .logic spec, or says "forge new" or "create a spec":
 

@@ -1,6 +1,13 @@
 ---
-description: Start a guided .logic spec authoring session in chat. The AI interprets your intent, builds each section, derives edge cases from your happy path, and writes the file when the spec is confirmed.
+description: Author and harden a .logic spec in chat, then compile it to an agent payload. This session specs and hardens only — a second session does the implementation.
 alwaysApply: false
+---
+
+# forge-new — Guided Spec Authoring
+
+**This session authors and hardens the spec. A second session implements.**
+When complete, you will receive a compiled payload to paste into a new agent session.
+
 ---
 
 Read `.lsd/skills/forge-new.md` and `.lsd/config.json`.

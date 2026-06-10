@@ -5,9 +5,15 @@ AI chat. The AI conducts the session — asking questions, interpreting intent, 
 from the accumulated context, and stress-testing the result before writing the file. The user
 never leaves the chat to fill in a form.
 
-`forge-new` produces a lint-clean first draft. It closes by automatically transitioning into
-RSC-AR Phase 2 (Adversary) — the two skills together form a single continuous pipeline from
-intent to hardened spec.
+`forge-new` runs the full LSD pipeline in one continuous session:
+
+```
+Intent capture → spec draft → adversarial hardening (RSC-AR) → compile → payload delivery
+```
+
+**This session authors and hardens only. A second session does the implementation.**
+When this skill completes, it delivers a compiled payload. The user opens a new agent session
+and pastes that payload as the first message. That agent implements. This agent does not.
 
 ---
 
@@ -330,25 +336,62 @@ the spec before continuing. If it is a warning, note it for the user.
 
 ---
 
-## PHASE 10: RSC-AR HANDOFF
+## PHASE 10: RSC-AR HARDENING
 
-Do not stop after a clean lint. The forge-new output is a first draft. Transition automatically:
+Do not stop after a clean lint. The draft spec is not ready for compilation. Transition automatically:
 
 ```
-Spec written: specs/LS-YYYY-NNN-<slug>.logic
+Draft written: specs/LS-YYYY-NNN-<slug>.logic
 forge_lint:    clean
 forge_validate: <result>
 
-Transitioning to RSC-AR adversarial hardening — forge-new → RSC-AR is one pipeline.
+Entering RSC-AR Phase 2 — attacking the draft now.
 ```
 
 Read `.lsd/skills/rsc-ar.md`.
 
-**Skip RSC-AR Phase 1.** The spec you just wrote IS the Phase 1 output. Begin at **Phase 2
-(Adversary)** using the spec content as the draft to attack. Run the full adversarial checklist
-against it and report findings.
+**Skip RSC-AR Phase 1.** The spec written in Phase 9 IS the Proposer draft. Begin at **Phase 2
+(Adversary)** — run the full adversarial checklist against the draft content and report all findings.
 
-Wait for the user to say "Execute Phase 3" before resolving. The RSC-AR gates still apply.
+Wait for the user to say "Execute Phase 3" before resolving.
+
+---
+
+## PHASE 11: SAVE HARDENED SPEC → COMPILE → DELIVER
+
+After RSC-AR Phase 3 (Resolver) produces the final hardened spec:
+
+**Step 1 — Save.** Overwrite the draft file (`specs/LS-YYYY-NNN-<slug>.logic`) with the
+Phase 3 content exactly as output. Do not summarise or paraphrase — write the full file.
+
+**Step 2 — Lint.** Call `forge_lint` on the saved file. If it fails, fix and re-lint.
+Do not proceed until lint exits 0.
+
+**Step 3 — Compile.** Call `forge_compile` on the hardened spec file.
+
+**Step 4 — Deliver.** Show the compiled payload in full, then close the session with:
+
+```
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  Spec:     specs/LS-YYYY-NNN-<slug>.logic
+  Lint:     clean
+  Validate: <result>
+  Compiled: ✓
+
+  THIS SESSION IS COMPLETE.
+
+  To implement:
+  1. Open a new agent session (new chat, new context window)
+  2. Paste the compiled payload above as your first message
+  3. The agent implements from the payload — nothing else
+
+  Do not implement in this session.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+```
+
+**Hard rule: do not write any implementation code in this session after delivering the payload.**
+If the user asks to implement here, decline and restate the instruction above. The payload exists
+precisely so implementation happens in a clean context with no authoring history.
 
 ---
 
