@@ -164,10 +164,11 @@ function resolvePath(filePath, projectRoot) {
 }
 
 function specList(projectRoot) {
-  const fs        = require('fs');
-  const { lintDir } = require('../linter/index');
-  const lsdPath   = path.join(projectRoot, '.lsd', 'config.json');
-  let specsDir    = path.join(projectRoot, 'specs');
+  const fs              = require('fs');
+  const { lintDir }     = require('../linter/index');
+  const { parse }       = require('../linter/parser');
+  const lsdPath         = path.join(projectRoot, '.lsd', 'config.json');
+  let specsDir          = path.join(projectRoot, 'specs');
 
   if (fs.existsSync(lsdPath)) {
     try {
@@ -190,6 +191,19 @@ function specList(projectRoot) {
     const domain = r.meta && r.meta.domain ? r.meta.domain : '(no domain)';
     const status = r.parseError ? '[parse error]' : r.passed ? '[pass]' : '[fail]';
     lines.push(`  ${status}  ${id}  ${domain}  ${rel}`);
+
+    // Parse the spec to expose authorized_files for cross-spec conflict detection
+    try {
+      const parsed = parse(r.filePath);
+      const boundaries = (parsed.sections && parsed.sections.TARGET_BOUNDARIES) || '';
+      const authBlock  = boundaries.match(/authorized_files:([\s\S]*?)(?=forbidden_files:|$)/)?.[1] || '';
+      const authFiles  = authBlock.split('\n')
+        .map(l => l.replace(/^\s*-\s*/, '').trim())
+        .filter(Boolean);
+      if (authFiles.length > 0) {
+        lines.push(`    authorized_files: ${authFiles.join(', ')}`);
+      }
+    } catch (_) {}
   }
   return lines.join('\n');
 }
