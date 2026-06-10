@@ -231,12 +231,19 @@ Each phase gates on confirmation — you see the draft before the Adversary atta
 Bootstrap LSD FORGE into the current project. Run once. Detects Node/Python/Go/Rust stacks, finds AI posture files, writes `.lsd/`, augments posture files, installs pre-commit hook.
 
 ### `forge new`
-Interactive wizard that authors a new `.logic` spec through a structured questionnaire. Asks for domain, owner, runtime, data stores, authorized files, forbidden files, happy path steps, edge cases, regression fence, and context note. Auto-assigns an ID, writes the file, and runs lint.
+Intelligent guided wizard that authors a new `.logic` spec. Start with a plain-language description of what you want to build — the wizard interprets your intent and suggests content for every section.
 
 ```bash
 forge new            # interactive terminal wizard
 forge new --json     # wizard output as JSON (file path + lint findings)
 ```
+
+**Wizard flow:**
+1. Describe the feature in plain language — "I want to add a password reset flow…"
+2. The wizard detects your domain, runtime (from `.lsd/config.json`), likely data stores, and pre-populates every section
+3. At each step, see lettered/numbered suggestions — press `↵` to accept, type letters to remove items, `+` to add custom entries, or `r` to refine your goal
+4. Refinement re-interprets your description and regenerates suggestions for all remaining sections
+5. Auto-assigns an ID, writes the file, and lints — exits with an error if it does not pass
 
 The same intake is available as the `forge_new` MCP tool for AI-driven authoring — the connected AI asks the questions in conversation, then calls the tool with the collected answers.
 

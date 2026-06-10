@@ -38,6 +38,7 @@ Primary language: JavaScript (CommonJS). Runtime: Node.js. No framework. One pro
 │   ├── coverage.js               # coverage() — gap report: services vs. existing specs
 │   ├── validate.js               # validate() — cross-spec collision detection (forbidden-exposure, domain-overlap)
 │   ├── new.js                    # newSpec() — intake answers → .logic file + lint; generateId(), buildLogicFile()
+│   ├── interpret.js              # interpret(description, config) — derives domain/files/steps from plain-language description
 │   └── mcp.js                    # TOOLS, callTool() — 7 MCP tool definitions and handlers
 ├── assets/
 │   ├── onboarding.md             # AI automation trigger template (slots filled at init time)

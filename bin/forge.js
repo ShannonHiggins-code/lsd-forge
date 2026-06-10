@@ -25,87 +25,288 @@ const targets = args.slice(1).filter(a => !a.startsWith('--') && !a.startsWith('
 
 // ── Help & version ────────────────────────────────────────────────────────────
 
-// ── forge new — async readline wizard ────────────────────────────────────────
+// ── forge new — intelligent guided wizard ────────────────────────────────────
 
 if (command === 'new') {
   const readline = require('readline');
-  const { newSpec, formatNew, generateId } = require('../forge/new');
-  const path2 = require('path');
   const fs2   = require('fs');
+  const path2 = require('path');
+  const { newSpec, formatNew } = require('../forge/new');
+  const { interpret }          = require('../forge/interpret');
 
   const rl  = readline.createInterface({ input: process.stdin, output: process.stdout });
   const ask = q => new Promise(res => rl.question(q, res));
 
-  const askRequired = async (label) => {
-    let val = '';
-    while (!val.trim()) val = await ask(`  ${label}: `);
-    return val.trim();
+  const C = flags.plain
+    ? { bold:'', reset:'', dim:'', green:'', yellow:'', cyan:'', red:'' }
+    : { bold:'\x1b[1m', reset:'\x1b[0m', dim:'\x1b[2m',
+        green:'\x1b[32m', yellow:'\x1b[33m', cyan:'\x1b[36m', red:'\x1b[31m' };
+
+  const LETTERS = 'abcdefghijklmnopqrstuvwxyz'.split('');
+
+  const hdr = title => {
+    const bar = '─'.repeat(Math.max(0, 42 - title.length));
+    return `\n${C.bold}─── ${title} ${C.reset}${C.dim}${bar}${C.reset}\n`;
   };
 
-  const askList = async (label, hint) => {
-    const items = [];
-    process.stdout.write(`\n  ${label}\n`);
-    if (hint) process.stdout.write(`  ${hint}\n`);
-    process.stdout.write('  One per line, blank line when done:\n');
-    while (true) {
-      const line = await ask('  > ');
-      if (!line.trim()) break;
-      items.push(line.trim());
-    }
-    return items;
+  const loadConfig = () => {
+    const p = path2.join(process.cwd(), '.lsd', 'config.json');
+    try { return JSON.parse(fs2.readFileSync(p, 'utf8')); } catch (_) { return null; }
   };
 
-  const askMultiline = async (label) => {
-    const lines = [];
-    process.stdout.write(`\n  ${label}\n`);
-    process.stdout.write('  Free text, blank line when done:\n');
+  // Prompt with a labelled list — user presses Enter to accept, letters to remove, + to add, c to clear
+  const promptList = async (label, items, canRefine) => {
+    let current = [...items];
+
+    const redraw = () => {
+      process.stdout.write(`\n  ${C.bold}${label}${C.reset}\n`);
+      if (current.length === 0) {
+        process.stdout.write(`    ${C.dim}(none)${C.reset}\n`);
+      } else {
+        current.forEach((item, i) => {
+          process.stdout.write(`    ${C.cyan}${LETTERS[i]}${C.reset}. ${item}\n`);
+        });
+      }
+      process.stdout.write('\n');
+      process.stdout.write(
+        `  ${C.dim}[↵] Accept all  [letter] Remove item  [+] Add  [c] Clear & enter fresh` +
+        (canRefine ? `  [r] Refine goal` : '') +
+        `${C.reset}\n`
+      );
+    };
+
+    redraw();
+
     while (true) {
-      const line = await ask('  > ');
-      if (!line.trim()) break;
-      lines.push(line.trim());
+      const raw = (await ask('  > ')).trim().toLowerCase();
+
+      if (raw === '')       return { action: 'accept', items: current };
+      if (raw === 'r' && canRefine) return { action: 'refine' };
+
+      if (raw === '+') {
+        const extra = (await ask('  Add item: ')).trim();
+        if (extra) current.push(extra);
+        redraw();
+        continue;
+      }
+
+      if (raw === 'c') {
+        current = [];
+        process.stdout.write(`  Enter one item per line, blank line when done:\n`);
+        while (true) {
+          const line = (await ask('  > ')).trim();
+          if (!line) break;
+          current.push(line);
+        }
+        return { action: 'accept', items: current };
+      }
+
+      // Letters remove items by index
+      const toRemove = new Set();
+      for (const ch of raw) {
+        const idx = LETTERS.indexOf(ch);
+        if (idx >= 0 && idx < current.length) toRemove.add(idx);
+      }
+      if (toRemove.size > 0) current = current.filter((_, i) => !toRemove.has(i));
+      redraw();
     }
-    return lines.join(' ');
+  };
+
+  // Prompt with a numbered steps list — Enter to accept, number to edit, + to add
+  const promptSteps = async (label, steps, minimum, canRefine) => {
+    const current = [...steps];
+
+    const redraw = () => {
+      process.stdout.write(`\n  ${C.bold}${label}${C.reset}\n`);
+      current.forEach((s, i) => {
+        process.stdout.write(`    ${C.cyan}${i + 1}${C.reset}. ${s}\n`);
+      });
+      process.stdout.write('\n');
+      const minNote = minimum ? `  ${C.yellow}Minimum: ${minimum} step${minimum > 1 ? 's' : ''}${C.reset}` : '';
+      process.stdout.write(
+        `  ${C.dim}[↵] Accept all  [1-9] Edit step  [+] Add step` +
+        (canRefine ? `  [r] Refine goal` : '') +
+        `${C.reset}${minNote}\n`
+      );
+    };
+
+    redraw();
+
+    while (true) {
+      const raw = (await ask('  > ')).trim().toLowerCase();
+
+      if (raw === '') {
+        if (minimum && current.length < minimum) {
+          process.stdout.write(`  ${C.yellow}Need at least ${minimum} step${minimum > 1 ? 's' : ''} — add with [+].${C.reset}\n`);
+          continue;
+        }
+        return { action: 'accept', steps: current };
+      }
+
+      if (raw === 'r' && canRefine) return { action: 'refine' };
+
+      if (raw === '+') {
+        const extra = (await ask(`  Step ${current.length + 1}: `)).trim();
+        if (extra) current.push(extra);
+        redraw();
+        continue;
+      }
+
+      const num = parseInt(raw, 10);
+      if (!isNaN(num) && num >= 1 && num <= current.length) {
+        process.stdout.write(`  Current: ${C.dim}${current[num - 1]}${C.reset}\n`);
+        const updated = (await ask(`  Step ${num}: `)).trim();
+        if (updated) current[num - 1] = updated;
+        redraw();
+        continue;
+      }
+
+      process.stdout.write(`  ${C.dim}Type a step number to edit, [+] to add, or [↵] to accept.${C.reset}\n`);
+    }
+  };
+
+  // Re-interpret with additional context
+  const refine = async (description, config) => {
+    const clarify = (await ask('\n  Clarify your goal: ')).trim();
+    const newDesc = clarify ? `${description}. ${clarify}` : description;
+    process.stdout.write(`${C.dim}  Re-interpreting...${C.reset}\n`);
+    return { description: newDesc, hints: interpret(newDesc, config) };
   };
 
   (async () => {
-    const CLR = flags.plain ? { bold:'', reset:'', dim:'' } : { bold:'\x1b[1m', reset:'\x1b[0m', dim:'\x1b[2m' };
-    process.stdout.write(`\n${CLR.bold}forge new${CLR.reset} — create a new .logic spec\n\n`);
+    process.stdout.write(`\n${C.bold}forge new${C.reset} — create a new .logic spec\n`);
+    process.stdout.write(`${C.dim}Describe what you want to build — the wizard interprets your goal and suggests content for each section.${C.reset}\n\n`);
 
-    const domain  = await askRequired('Domain (e.g. auth/login-redirect)');
-    const owner   = await askRequired('Owner (e.g. J. Rivera (PA))');
-    const runtime = await askRequired('Runtime / framework (e.g. TypeScript 5.4 / Next.js 15)');
-    const stores  = await askRequired('Data stores (e.g. Postgres read-only, Redis)');
+    const config = loadConfig();
 
-    const authFiles    = await askList('Authorized files — files the agent may modify');
-    const forbidFiles  = await askList('Forbidden files — files the agent must never touch');
-    const happySteps   = await askList('Happy path steps — primary success flow (no numbering)', 'Each step is one sentence describing a discrete action.');
+    // ── Step 0: intent ────────────────────────────────────────────────────────
+    let description = '';
+    while (!description) {
+      description = (await ask(`${C.bold}What do you want to build?${C.reset} (plain language)\n> `)).trim();
+    }
 
-    const minimum = Math.ceil(happySteps.length / 2) || 1;
-    const edgeSteps = await askList('Edge / unhappy path steps — failure cases', `Need at least ${minimum} step${minimum > 1 ? 's' : ''} (≥ 50% of ${happySteps.length} happy steps).`);
+    process.stdout.write(`\n${C.dim}  Interpreting...${C.reset}\n`);
+    let hints = interpret(description, config);
 
-    const fence   = await askList('Regression fence — behavior that must not break');
-    const debt    = await askMultiline('Context / debt note — rationale for non-obvious decisions');
+    // ── Step 1: review interpretation ─────────────────────────────────────────
+    process.stdout.write(hdr('Interpretation'));
+    process.stdout.write(`  Domain:      ${C.cyan}${hints.domain || '(not detected — enter below)'}${C.reset}\n`);
+    process.stdout.write(`  Runtime:     ${hints.runtime}\n`);
+    process.stdout.write(`  Data stores: ${hints.data_stores}\n\n`);
+    process.stdout.write(`  ${C.dim}[↵] Continue   [r] Refine goal${C.reset}\n`);
+
+    const startChoice = (await ask('  > ')).trim().toLowerCase();
+    if (startChoice === 'r') {
+      const updated = await refine(description, config);
+      description = updated.description;
+      hints       = updated.hints;
+      process.stdout.write(`  Domain: ${C.cyan}${hints.domain || '(not detected)'}${C.reset}\n`);
+    }
+
+    // ── Step 2: identity ──────────────────────────────────────────────────────
+    process.stdout.write(hdr('Identity'));
+
+    let domain = '';
+    while (!domain) {
+      const defVal = hints.domain || '';
+      const prompt = defVal ? `  Domain ${C.dim}[${defVal}]${C.reset}: ` : `  Domain (e.g. auth/login-redirect): `;
+      domain = ((await ask(prompt)).trim()) || defVal;
+      if (!domain) process.stdout.write(`  ${C.red}Domain is required.${C.reset}\n`);
+    }
+
+    let owner = hints.owner || '';
+    while (!owner) {
+      const prompt = `  Owner (name + role, e.g. J. Rivera (PA)): `;
+      owner = (await ask(prompt)).trim();
+      if (!owner) process.stdout.write(`  ${C.red}Owner is required.${C.reset}\n`);
+    }
+
+    // ── Step 3: TARGET_BOUNDARIES ─────────────────────────────────────────────
+    process.stdout.write(hdr('TARGET_BOUNDARIES'));
+
+    let runtime = hints.runtime;
+    const runtimeRaw = (await ask(`  Runtime ${C.dim}[${runtime}]${C.reset}: `)).trim();
+    if (runtimeRaw) runtime = runtimeRaw;
+
+    let data_stores = hints.data_stores;
+    const storesRaw = (await ask(`  Data stores ${C.dim}[${data_stores}]${C.reset}: `)).trim();
+    if (storesRaw) data_stores = storesRaw;
+
+    let authorized_files = [];
+    while (true) {
+      const res = await promptList('Authorized files — files the agent may modify', [...hints.authorized_files], true);
+      if (res.action === 'refine') {
+        const updated = await refine(description, config);
+        description = updated.description; hints = updated.hints;
+        continue;
+      }
+      authorized_files = res.items;
+      break;
+    }
+
+    let forbidden_files = [];
+    while (true) {
+      const res = await promptList('Forbidden files — files the agent must never touch', [...hints.forbidden_files], true);
+      if (res.action === 'refine') {
+        const updated = await refine(description, config);
+        description = updated.description; hints = updated.hints;
+        continue;
+      }
+      forbidden_files = res.items;
+      break;
+    }
+
+    // ── Step 4: INTENT_HAPPY_PATH ─────────────────────────────────────────────
+    let happy_path_steps = [];
+    while (true) {
+      const res = await promptSteps('INTENT_HAPPY_PATH — primary success flow', [...hints.happy_path_steps], 1, true);
+      if (res.action === 'refine') {
+        const updated = await refine(description, config);
+        description = updated.description; hints = updated.hints;
+        continue;
+      }
+      happy_path_steps = res.steps;
+      break;
+    }
+
+    // ── Step 5: EDGE_CRITICAL_UNHAPPY_PATH ────────────────────────────────────
+    const minimum = Math.ceil(happy_path_steps.length / 2);
+    let edge_steps = [];
+    while (true) {
+      const res = await promptSteps('EDGE_CRITICAL_UNHAPPY_PATH — failure cases', [...hints.edge_steps], minimum, true);
+      if (res.action === 'refine') {
+        const updated = await refine(description, config);
+        description = updated.description; hints = updated.hints;
+        continue;
+      }
+      edge_steps = res.steps;
+      break;
+    }
+
+    // ── Step 6: REGRESSION_FENCE ──────────────────────────────────────────────
+    const fenceRes = await promptList('REGRESSION_FENCE — behavior that must not break', [...hints.regression_fence], false);
+    const regression_fence = fenceRes.items;
+
+    // ── Step 7: CONTEXT_DEBT_NOTE ─────────────────────────────────────────────
+    process.stdout.write(hdr('CONTEXT_DEBT_NOTE'));
+    process.stdout.write(`  ${C.dim}Rationale for non-obvious decisions — security choices, UX overrides, deferred work.${C.reset}\n`);
+    process.stdout.write(`  ${C.dim}Free text, blank line when done. Press [↵] to skip.${C.reset}\n\n`);
+    const debtLines = [];
+    while (true) {
+      const line = (await ask('  > ')).trim();
+      if (!line) break;
+      debtLines.push(line);
+    }
+    const context_debt = debtLines.join(' ');
 
     rl.close();
 
-    // Resolve ID for display before writing
-    const specsDir = (() => {
-      const cfgPath = path2.join(process.cwd(), '.lsd', 'config.json');
-      if (fs2.existsSync(cfgPath)) {
-        try { const c = JSON.parse(fs2.readFileSync(cfgPath,'utf8')); if (c.specs_dir) return path2.join(process.cwd(), c.specs_dir); } catch(_){}
-      }
-      return path2.join(process.cwd(), 'specs');
-    })();
-    const id = generateId(specsDir);
-
-    process.stdout.write(`\n  ${CLR.dim}───────────────────────────────────────────${CLR.reset}\n`);
-    process.stdout.write(`  ID: ${CLR.bold}${id}${CLR.reset}\n`);
-
+    // ── Write & lint ──────────────────────────────────────────────────────────
     const answers = {
-      domain, owner, runtime, data_stores: stores,
-      authorized_files: authFiles, forbidden_files: forbidFiles,
-      happy_path_steps: happySteps, edge_steps: edgeSteps,
-      regression_fence: fence, context_debt: debt,
+      domain, owner, runtime, data_stores,
+      authorized_files, forbidden_files,
+      happy_path_steps, edge_steps,
+      regression_fence, context_debt,
     };
 
     const result = newSpec(process.cwd(), answers);
@@ -127,7 +328,6 @@ if (command === 'new') {
     process.exit(2);
   });
 
-  // Prevent fall-through — return prevents executing the rest of the file
   return;
 }
 
