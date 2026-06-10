@@ -94,7 +94,21 @@ function installWindsurfRules(projectRoot) {
     const dest = path.join(destDir, file);
     if (!fs.existsSync(dest)) { fs.copyFileSync(path.join(srcDir, file), dest); installed++; }
   }
-  return installed > 0 ? '.windsurf/rules/forge-new.md  → Windsurf Cascade rule' : null;
+  return installed > 0 ? '.windsurf/rules/forge-new.md     → Windsurf Cascade rule' : null;
+}
+
+function installCopilotPrompts(projectRoot) {
+  const srcDir  = path.join(ASSETS_DIR, 'copilot-prompts');
+  const destDir = path.join(projectRoot, '.github', 'prompts');
+  if (!fs.existsSync(srcDir)) return null;
+  if (!fs.existsSync(destDir)) fs.mkdirSync(destDir, { recursive: true });
+  let installed = 0;
+  for (const file of fs.readdirSync(srcDir)) {
+    if (!file.endsWith('.prompt.md')) continue;
+    const dest = path.join(destDir, file);
+    if (!fs.existsSync(dest)) { fs.copyFileSync(path.join(srcDir, file), dest); installed++; }
+  }
+  return installed > 0 ? '.github/prompts/forge-new.prompt.md → /forge-new in Copilot Chat' : null;
 }
 
 // Map posture file patterns to their shortcut installer
@@ -113,6 +127,11 @@ const TOOL_SHORTCUTS = [
     // Windsurf Cascade
     detect:  (pf) => pf.some(f => f.includes('.windsurf')),
     install: installWindsurfRules,
+  },
+  {
+    // GitHub Copilot
+    detect:  (pf) => pf.includes('.github/copilot-instructions.md'),
+    install: installCopilotPrompts,
   },
 ];
 
