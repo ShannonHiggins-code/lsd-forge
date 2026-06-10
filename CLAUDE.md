@@ -290,6 +290,7 @@ Read `.claude/routing-state.json`. If it exists and `enabled: false` → routing
 | `skills/testing.md` | Writing fixture specs and verifying rule behavior |
 | `skills/debugging.md` | Diagnosing rule failures, parser issues, CLI errors |
 | `skills/self-refinement.md` | Non-trivial implementation, design decisions, architectural choices — self-correction, CoT verification, self-consistency |
+| `assets/skills/forge-new.md` | **Chat-native spec authoring** — guided intake conversation for adopter projects; AI interprets intent, builds sections, stress-tests, calls `forge_new` MCP tool |
 | `assets/skills/rsc-ar.md` | **Universal RSC-AR loop** — spec authoring for any project that has run `lsd init`; Phase 3 outputs a `.logic` file |
 | `assets/skills/spec-authoring.md` | `.logic` format reference — use when writing or reviewing specs for adopter projects |
 | `assets/skills/self-refinement.md` | Model-agnostic self-refinement — the version shipped to adopter projects via `lsd init` |

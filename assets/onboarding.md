@@ -94,8 +94,9 @@ Load skills from `.lsd/skills/` before starting any task:
 
 | Skill | When to use |
 |-------|-------------|
-| `rsc-ar.md` | Any non-trivial task — runs Phase 1 → Phase 2 → Phase 3 to produce a hardened `.logic` spec |
-| `spec-authoring.md` | Writing a `.logic` file from scratch — format reference and lint rules |
+| `forge-new.md` | **Author a new spec in chat** — guided intake conversation; interprets intent, builds each section, stress-tests before writing |
+| `rsc-ar.md` | Harden an existing draft — Proposer → Adversary → Resolver loop |
+| `spec-authoring.md` | `.logic` format reference and lint rules |
 | `self-refinement.md` | Self-correction, chain-of-thought verification, self-consistency for decisions |
 | `onboarding.md` | Full discovery protocol — run on first session or when registry is stale |
 
