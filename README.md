@@ -14,9 +14,34 @@ npx forge init
 LSD FORGE enforces a structured workflow between engineers and AI coding agents:
 
 1. **Before an agent writes code, it authors a spec.** A `.logic` file defines exact intent, authorization boundaries, failure cases, and what must not break — verified by machine before any implementation begins.
-2. **Every spec is adversarially hardened.** The built-in RSC-AR loop runs a three-phase Proposer → Adversary → Resolver cycle. The Adversary stress-tests the spec to breaking. The Resolver merges the surviving changes.
+2. **Every spec is adversarially hardened.** The built-in RSC-AR loop runs a Proposer → Adversary → Resolver cycle. The Adversary stress-tests the spec to breaking. The Resolver merges the surviving changes.
 3. **Lint and compile gate the agent.** A spec that doesn't pass `forge lint` cannot be compiled. A spec that doesn't compile cannot be delivered to an agent. The pipeline is enforced, not suggested.
 4. **Connected AI models self-onboard.** After `forge init`, any AI working in the project reads `.lsd/onboarding.md`, maps all services and artifacts, loads authorization boundaries, and reports its findings — before touching anything.
+
+---
+
+## How authoring works
+
+LSD FORGE separates authoring from implementation into two distinct sessions. The same AI that writes a spec should not implement it — implementation happens in a clean context with no authoring history.
+
+```
+Session 1 — Author                    Session 2 — Implement
+─────────────────────────────         ─────────────────────────────
+/forge-new                            Paste compiled payload
+  │                                     │
+  ├─ Intent capture                     └─ Agent reads the brief
+  ├─ Section-by-section authoring           and implements
+  ├─ Ambiguous language detection
+  ├─ Edge cases derived from happy path
+  ├─ Cross-spec conflict check
+  ├─ Adversarial self-check (2 layers)
+  ├─ forge_new → forge_lint → forge_validate
+  ├─ RSC-AR Phase 2 (Adversary attacks draft)
+  ├─ RSC-AR Phase 3 (Resolver hardens)
+  └─ forge_compile → payload delivered
+```
+
+The compiled payload is the hand-off artifact. It contains everything the implementing agent needs — no context from the authoring conversation leaks through.
 
 ---
 
@@ -40,24 +65,29 @@ Report your findings before touching anything else.
 ```
 
 ```bash
-# 3. See what was discovered and where the gaps are
+# 3. See what was discovered
 forge status
 forge coverage
 forge validate
+```
 
-# 4. Author a spec (interactive wizard)
-forge new
+```bash
+# 4. Author a spec — type this in your AI chat
+/forge-new
+```
 
-# 5. Lint and compile to an agent payload
-forge lint specs/my-spec.logic
-forge compile specs/my-spec.logic
+The `/forge-new` slash command opens a guided 11-phase conversation. Your AI interprets your intent, builds each section with reasoning, derives edge cases from your happy path, runs an adversarial check, hardens the spec with RSC-AR, and delivers a compiled payload — all without leaving the chat.
+
+```bash
+# 5. Open a new agent session and paste the compiled payload as the first message
+# That agent implements. The authoring session is complete.
 ```
 
 ---
 
 ## What `forge init` installs
 
-`forge init` detects your stack, finds your existing AI posture files, and wires everything together in one command.
+`forge init` detects your stack, finds your existing AI posture files, and wires everything together.
 
 ```
 .lsd/
@@ -65,7 +95,8 @@ forge compile specs/my-spec.logic
 ├── config.json         Authorization map: stack, verify oracle, authorized/forbidden paths
 ├── registry.json       Resource registry — AI populates on first session (services, artifacts, posture)
 └── skills/
-    ├── rsc-ar.md           The FORGE authoring loop (Proposer → Adversary → Resolver)
+    ├── forge-new.md        Guided spec authoring conversation — the primary authoring skill
+    ├── rsc-ar.md           The FORGE hardening loop (Proposer → Adversary → Resolver)
     ├── spec-authoring.md   .logic format reference and lint rules
     ├── self-refinement.md  Self-correction and CoT verification patterns
     └── onboarding.md       Discovery protocol — maps services and artifacts
@@ -75,6 +106,14 @@ Also installs:
 - **Pre-commit hook** — staged `.logic` files are linted with `--strict` before every commit
 - **`lint:specs` script** in `package.json`
 - **LSD block** prepended to any AI posture files found (`CLAUDE.md`, `.cursor/rules`, `.github/copilot-instructions.md`, and others)
+- **`/forge-new` shortcut** in the appropriate format for every detected AI tool:
+
+| Tool detected | Shortcut installed | Invocation |
+|---|---|---|
+| Claude Code (`CLAUDE.md`) | `.claude/commands/forge-new.md` | `/forge-new` |
+| GitHub Copilot (`.github/copilot-instructions.md`) | `.github/prompts/forge-new.prompt.md` | `/forge-new` |
+| Cursor (`.cursor/rules`) | `.cursor/rules/forge-new.mdc` | `@forge-new` |
+| Windsurf (`.windsurf/rules`) | `.windsurf/rules/forge-new.md` | Cascade rule |
 
 ---
 
@@ -89,7 +128,7 @@ npm install lsd-forge --save-dev
 npx forge init
 ```
 
-Then open a new session in the project and paste this prompt to your AI:
+Open a new session and paste this prompt to your AI:
 
 ```
 Read .lsd/onboarding.md and execute the discovery protocol in full.
@@ -98,7 +137,7 @@ Populate .lsd/registry.json with what you find.
 Report your findings before touching anything else.
 ```
 
-The AI maps everything and reports back. Then run:
+Then run:
 
 ```bash
 forge status      # see what was discovered
@@ -119,7 +158,7 @@ Do not spec alphabetically. Work with the AI to rank the registry by blast radiu
 | 5th | Background jobs | Silent failure surface |
 | Last | Read-only views | Lowest risk |
 
-Run `forge new` for the top 5. That is enough to validate the workflow and build team muscle memory before going broader.
+Use `/forge-new` for the top 5. That is enough to validate the workflow and build team muscle memory before going broader.
 
 ### Phase 3 — Set a low CI threshold and raise it quarterly
 
@@ -129,13 +168,11 @@ forge coverage --threshold 40   # month 3
 forge coverage --threshold 80   # month 6
 ```
 
-Starting at 0% threshold means the gate is present but not blocking. Every quarter it gets tighter.
-
 ### Phase 4 — The spec-forward rule (ongoing)
 
 Pick a date — the **spec line**. From that date:
 
-- **New feature** → `forge new` before a line of code is written
+- **New feature** → `/forge-new` before a line of code is written
 - **Change to a specced service** → update the spec first, lint must pass
 - **Change to an unspecced service** → author the spec as part of the ticket
 
@@ -143,7 +180,7 @@ The pre-commit hook only fires on staged `.logic` files. Existing unspecced code
 
 ### The coverage target
 
-The goal for a mature application is not 100% coverage. It is 100% coverage of the risk surface and zero unspecced new work. A ten-year-old stable read service with no spec is fine. A new payment flow with no spec is not.
+The goal is not 100% coverage. It is 100% coverage of the risk surface and zero unspecced new work. A ten-year-old stable read service with no spec is fine. A new payment flow with no spec is not.
 
 ---
 
@@ -195,6 +232,8 @@ Do not change this behaviour without a new security review.
 
 All five sections are required. A spec missing any section will not lint. A spec that does not lint will not compile.
 
+The `requires` field lists spec IDs this spec depends on. `/forge-new` surfaces related specs and asks which are prerequisites before writing the file.
+
 ---
 
 ## Lint rules
@@ -211,41 +250,74 @@ Errors block compilation. Warnings do not — unless `--strict` is passed.
 
 ---
 
+## The `/forge-new` authoring pipeline
+
+`/forge-new` is the primary way to author a spec. It runs in your AI chat as an 11-phase guided conversation. You describe what you want to build once — the AI does the rest.
+
+### What happens in the conversation
+
+**Phase 1 — Intent capture.** One open question: "What do you want to build?" No forms, no structure yet.
+
+**Phase 2 — Interpretation.** The AI shows its reading of your description — domain, runtime, data stores, security sensitivity. You correct it before any sections are touched.
+
+**Phase 3 — TARGET\_BOUNDARIES.** Before proposing files, the AI calls `forge_spec_list` and checks whether any proposed path is already authorized in another spec. Conflicts are surfaced before you confirm.
+
+**Phase 4 — INTENT\_HAPPY\_PATH.** Steps are actor-prefixed and observable. Any step containing a banned phrase is rejected immediately with a specific rewrite offer — it will not proceed until the step is clean.
+
+**Phase 5 — EDGE\_CRITICAL\_UNHAPPY\_PATH.** Edge cases are derived one-per-step from the confirmed happy path, each labelled with the step it mirrors. Generic templates are not used. Every external call, every write, every user input gets its corresponding failure case.
+
+**Phases 6–8 — Regression fence, spec dependencies, context debt.** The AI surfaces related specs and asks which are prerequisites (`requires: []`). Security-sensitive domains cannot leave `CONTEXT_DEBT_NOTE` empty.
+
+**Phase 9 — Adversarial self-check.** Two layers before writing:
+- Structural compliance (authorized paths, banned phrases, step count, edge coverage)
+- Agent perspective ("can I implement every step without a judgment call not stated here?")
+
+**Phases 10–11 — RSC-AR hardening → compile → deliver.** The draft goes straight into RSC-AR Phase 2 (Adversary). After the Resolver converges, the hardened spec is saved, linted, validated, and compiled. The payload is delivered with a clear close: *"This session is complete. Open a new session. Paste the payload. That agent implements."*
+
+### Invoking `/forge-new`
+
+With an optional description:
+```
+/forge-new I want to add a password reset flow where users get an email with a one-time link
+```
+
+Without — the AI asks:
+```
+/forge-new
+```
+
+On platforms where `/forge-new` is not a slash command, paste the ingestion template from `.lsd/skills/forge-new.md`.
+
+---
+
 ## The RSC-AR loop
 
-The universal authoring skill is in `.lsd/skills/rsc-ar.md` after `forge init`. It runs three phases that any connected AI model can execute:
+RSC-AR is the adversarial hardening loop. It is automatically invoked at the end of `/forge-new` — you do not need to run it separately after authoring a spec that way.
 
-**Phase 1 — Proposer.** Draft the `.logic` spec. No TODOs, no placeholders, no ambiguous language.
+For hardening an existing spec or running RSC-AR standalone:
 
-**Phase 2 — Adversary.** Invert persona. Attack every claim in the draft: authorization violations, hallucinated APIs, missing failure cases, invariant gaps. Every PASS verdict must include a one-line justification — an unjustified clean verdict triggers a Phase 2 repeat.
+**Phase 1 — Proposer.** Draft the `.logic` spec. No TODOs, no ambiguous language.
 
-**Phase 3 — Resolver.** Apply every fix. Output the hardened `.logic` file. Run `forge lint`. It must exit 0 before delivery.
+**Phase 2 — Adversary.** Invert persona. Attack every claim: authorization violations, hallucinated APIs, missing failure cases, invariant gaps. Every PASS verdict requires a one-line justification.
 
-Each phase gates on confirmation — you see the draft before the Adversary attacks it, and you see the attack before the Resolver converges. Phases do not bleed. If Phase 3 introduces new assumptions, it re-enters Phase 2 (max 3 cycles).
+**Phase 3 — Resolver.** Apply every fix. Output the hardened file. Run `forge lint` — must exit 0 before delivery.
+
+Each phase gates on confirmation. If Phase 3 introduces new assumptions, it re-enters Phase 2 (max 3 cycles).
 
 ---
 
 ## CLI reference
 
 ### `forge init`
-Bootstrap LSD FORGE into the current project. Run once. Detects Node/Python/Go/Rust stacks, finds AI posture files, writes `.lsd/`, augments posture files, installs pre-commit hook.
+Bootstrap LSD FORGE into the current project. Run once per project. Detects Node/Python/Go/Rust stacks, finds AI posture files, writes `.lsd/`, installs `/forge-new` shortcuts for detected AI tools, augments posture files, installs pre-commit hook.
 
 ### `forge new`
-Intelligent guided wizard that authors a new `.logic` spec. Start with a plain-language description of what you want to build — the wizard interprets your intent and suggests content for every section.
+CLI fallback for authoring a spec without an AI chat. Starts with a plain-language description, interprets intent, and suggests content for each section with lettered/numbered options. Use `/forge-new` in chat when a connected AI is available — it produces a better spec.
 
 ```bash
 forge new            # interactive terminal wizard
-forge new --json     # wizard output as JSON (file path + lint findings)
+forge new --json     # JSON output (file path + lint findings)
 ```
-
-**Wizard flow:**
-1. Describe the feature in plain language — "I want to add a password reset flow…"
-2. The wizard detects your domain, runtime (from `.lsd/config.json`), likely data stores, and pre-populates every section
-3. At each step, see lettered/numbered suggestions — press `↵` to accept, type letters to remove items, `+` to add custom entries, or `r` to refine your goal
-4. Refinement re-interprets your description and regenerates suggestions for all remaining sections
-5. Auto-assigns an ID, writes the file, and lints — exits with an error if it does not pass
-
-The same intake is available as the `forge_new` MCP tool for AI-driven authoring — the connected AI asks the questions in conversation, then calls the tool with the collected answers.
 
 ### `forge lint [path]`
 ```bash
@@ -292,23 +364,21 @@ Prints the exact config block to connect the MCP server to your AI client.
 
 ## MCP integration
 
-LSD FORGE ships a zero-dependency MCP server (`forge-mcp`) that exposes all forge commands as tools any connected AI can call directly within a conversation — no copy-paste required.
-
-```
-Author spec via RSC-AR loop  →  forge_compile  →  agent payload in-session  →  agent executes
-```
+LSD FORGE ships a zero-dependency MCP server (`forge-mcp`) that exposes all forge commands as tools any connected AI can call directly within a conversation.
 
 ### Available tools
 
 | Tool | What it does |
 |------|-------------|
-| `forge_new` | Collect answers from the user and create a new `.logic` spec |
+| `forge_new` | Write a new `.logic` spec from structured answers. Accepts `requires` for spec dependencies. |
 | `forge_lint` | Lint a `.logic` spec and return findings |
 | `forge_compile` | Compile a spec and return the agent payload string |
 | `forge_status` | Project integration health |
 | `forge_coverage` | Spec coverage gap report |
 | `forge_validate` | Cross-spec collision detection |
-| `forge_spec_list` | List all specs with ID, domain, and pass/fail |
+| `forge_spec_list` | List all specs with ID, domain, pass/fail, and `authorized_files` per spec |
+
+`forge_spec_list` returns `authorized_files` for each spec so the AI can detect cross-spec path conflicts before writing a new spec.
 
 ### Setup
 
@@ -365,6 +435,7 @@ lint-specs:
     - forge coverage --threshold 80 --plain
   rules:
     - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+    - if: '$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH'
 ```
 
 ---
@@ -406,8 +477,11 @@ module.exports = {
 - [x] RSC-AR loop — adversarial spec authoring skill kit
 - [x] Collision engine — detect contradictions across specs in the same domain
 - [x] MCP server — deliver compiled payloads directly to connected AI agents
+- [x] `/forge-new` — chat-native guided authoring: intent → spec → RSC-AR → compile → payload
+- [x] Multi-platform shortcuts — `/forge-new` installed for Claude Code, Copilot, Cursor, Windsurf at `forge init` time
+- [x] Two-session model — authoring and implementation explicitly separated
+- [x] Spec dependencies — `requires` field captured during authoring, cross-referenced against registry
 - [ ] Platform adapters — ingest epics and stories from Jira, Linear, GitHub Issues
-- [ ] PA intake form — guided questionnaire that compiles to a `.logic` file
 
 ---
 
