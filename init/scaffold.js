@@ -254,15 +254,25 @@ function installPreCommitHook(projectRoot) {
 
 function hookScript(marker) {
   return `${marker}
-# Lint staged .logic files before commit
-STAGED=$(git diff --cached --name-only --diff-filter=ACM | grep '\\.logic$')
-if [ -n "$STAGED" ]; then
+
+# 1. Lint staged .logic files — blocks commit on error
+STAGED_LOGIC=$(git diff --cached --name-only --diff-filter=ACM | grep '\\.logic$')
+if [ -n "$STAGED_LOGIC" ]; then
   echo "LSD FORGE: linting staged .logic files..."
-  npx forge lint $STAGED --plain --strict
+  npx forge lint $STAGED_LOGIC --plain --strict
   if [ $? -ne 0 ]; then
     echo "LSD FORGE: spec lint failed. Fix errors before committing."
     exit 1
   fi
+fi
+
+# 2. Check staged code files against spec library — warns, does not block
+TOUCHED=$(npx forge touched --staged --plain 2>/dev/null)
+if [ -n "$TOUCHED" ]; then
+  echo ""
+  echo "LSD FORGE: staged files touch specced domains — re-validate if behaviour changed:"
+  echo "$TOUCHED"
+  echo ""
 fi
 `;
 }

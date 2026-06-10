@@ -80,8 +80,23 @@ const TOOLS = [
   },
   {
     name: 'forge_spec_list',
-    description: 'List all .logic spec files in the project with their ID, domain, and lint pass/fail status.',
+    description: 'List all .logic spec files in the project with their ID, domain, lint pass/fail status, and authorized_files. Use at the start of any session to understand the spec landscape and detect potential file conflicts.',
     inputSchema: { type: 'object', properties: {} },
+  },
+  {
+    name: 'forge_touched',
+    description: 'Given a list of file paths, return every spec that authorizes any of them. Call this before modifying files to discover which specs are affected and which regression fences apply. Essential for safe refactoring.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        files: {
+          type: 'array',
+          items: { type: 'string' },
+          description: 'File paths to check (relative to project root)',
+        },
+      },
+      required: ['files'],
+    },
   },
 ];
 
@@ -143,6 +158,15 @@ function callTool(name, args, projectRoot) {
 
       case 'forge_spec_list': {
         return textResult(specList(projectRoot), false);
+      }
+
+      case 'forge_touched': {
+        const { touched, formatTouched } = require('./touched');
+        const results = touched(projectRoot, args.files || []);
+        if (results.length === 0) {
+          return textResult('No specs are affected by these files.', false);
+        }
+        return textResult(formatTouched(results, { plain: true }), false);
       }
 
       default:

@@ -352,6 +352,8 @@ Usage:
   forge status                Show registry health, spec count, and unspecced services
   forge coverage              Gap report — which services have no spec
   forge validate              Cross-spec collision detection
+  forge touched <file...>     Show specs affected by these files
+  forge touched --staged      Show specs affected by staged git files
   forge mcp                   Print MCP server setup instructions
 
 Flags:
@@ -412,6 +414,43 @@ if (command === 'init') {
   if (!result.ok && result.error) { console.error(`Error: ${result.error}`); process.exit(2); }
   console.log(formatValidate(result, flags));
   process.exit(result.ok ? 0 : 1);
+
+} else if (command === 'touched') {
+  const { touched, formatTouched } = require('../forge/touched');
+  const { execSync } = require('child_process');
+
+  let files = [...targets];
+
+  if (args.includes('--staged')) {
+    try {
+      const raw = execSync('git diff --cached --name-only --diff-filter=ACM', { encoding: 'utf8' });
+      files = raw.split('\n').map(f => f.trim()).filter(f => f && !f.endsWith('.logic'));
+    } catch (_) {
+      console.error('Error: could not run git diff. Is this a git repository?');
+      process.exit(2);
+    }
+  }
+
+  if (files.length === 0) {
+    if (!flags.plain) console.log('\x1b[32m✓\x1b[0m No staged code files to check.');
+    process.exit(0);
+  }
+
+  const results = touched(process.cwd(), files);
+
+  if (flags.json) {
+    console.log(JSON.stringify(results, null, 2));
+    process.exit(0);
+  }
+
+  const output = formatTouched(results, flags);
+  if (output) {
+    console.log(output);
+    process.exit(flags.strict ? 1 : 0);
+  } else {
+    if (!flags.plain) console.log('\x1b[32m✓\x1b[0m No specs affected by these files.');
+    process.exit(0);
+  }
 
 } else if (command === 'mcp') {
   const cwd = process.cwd().replace(/\\/g, '/');
