@@ -1,0 +1,37 @@
+---
+id: LS-FIXTURE-002
+version: 1.0.0
+domain: test/forbidden-overlap
+requires: []
+owner: Fixture Author
+validated_against: 2026-06-03
+---
+
+## 1. TARGET_BOUNDARIES
+runtime:
+  - TypeScript 5.4 / Next.js 15 App Router
+
+authorized_files:
+  - src/app/api/users/route.ts
+  - src/middleware.ts
+
+forbidden_files:
+  - src/middleware.ts
+  - .env.production
+
+<!-- src/middleware.ts appears in both lists above — triggers forbidden-overlap error -->
+
+## 2. INTENT_HAPPY_PATH
+1. Authenticated user sends a GET request to /api/users.
+2. Middleware confirms the session is valid.
+3. Route handler queries the database and returns the user list as JSON.
+
+## 3. EDGE_CRITICAL_UNHAPPY_PATH
+1. If the session token is missing or expired, return a 401 with the message "Authentication required."
+2. If the database query times out after 2000ms, return a 503 with the message "Service temporarily unavailable." Log the timeout to telemetry.
+
+## 4. REGRESSION_FENCE
+- No dependencies declared. No preservation rules required.
+
+## 5. CONTEXT_DEBT_NOTE
+This is a test fixture for the forbidden-overlap lint rule. The src/middleware.ts file is intentionally listed in both authorized_files and forbidden_files to trigger an error.

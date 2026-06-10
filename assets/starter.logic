@@ -1,0 +1,42 @@
+---
+id: LS-YYYY-001
+version: 1.0.0
+domain: example/starter
+requires: []
+owner: team (update this)
+validated_against: 2026-06-09
+---
+
+## 1. TARGET_BOUNDARIES
+
+runtime: Node.js 20
+data_stores: PostgreSQL
+authorized_files:
+  - src/
+  - lib/
+forbidden_files:
+  - .env
+  - node_modules/
+
+## 2. INTENT_HAPPY_PATH
+
+1. User submits a valid request payload to the endpoint.
+2. System validates the request against the defined schema.
+3. System writes the record to the database with a generated ID.
+4. System returns a 201 response with the created resource ID.
+
+## 3. EDGE_CRITICAL_UNHAPPY_PATH
+
+1. User submits a payload that fails schema validation → return 400 with field-level error details identifying each invalid field.
+2. Database write fails due to a unique constraint violation → return 409 with the name of the conflicting field.
+
+## 4. REGRESSION_FENCE
+
+- Existing records in the database must not be modified by this change.
+- All existing API endpoints must continue to respond with their current status codes.
+
+## 5. CONTEXT_DEBT_NOTE
+
+This is a starter spec. Replace every section above with content specific to your feature.
+Update the front matter: set a real id, domain, owner, and today's date for validated_against.
+Run `forge lint specs/examples/LS-YYYY-001-example.logic --plain` to verify your spec is valid.

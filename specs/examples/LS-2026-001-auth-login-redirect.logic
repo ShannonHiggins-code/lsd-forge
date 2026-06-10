@@ -1,0 +1,41 @@
+---
+id: LS-2026-001
+version: 1.0.0
+domain: auth/login-redirect
+requires: []
+owner: J. Rivera (PA)
+validated_against: 2026-06-01
+---
+
+## 1. TARGET_BOUNDARIES
+runtime:
+  - TypeScript 5.4 / Next.js 15 App Router
+
+data_stores:
+  - Clerk session API (read-only)
+
+authorized_files:
+  - src/middleware.ts
+  - src/app/(auth)/login/page.tsx
+
+forbidden_files:
+  - src/db/schema/core.ts
+  - .env.production
+
+## 2. INTENT_HAPPY_PATH
+1. Unauthenticated user navigates to any protected route.
+2. Middleware detects the missing session token.
+3. The system redirects the user to /login with a returnUrl query parameter set to the original destination.
+4. User authenticates successfully via the Clerk login form.
+5. The system redirects the user back to the original destination using the returnUrl parameter.
+
+## 3. EDGE_CRITICAL_UNHAPPY_PATH
+1. If the returnUrl parameter contains an external domain or an absolute URL, strip it and redirect to the dashboard root instead. Do not redirect to external sites.
+2. If the Clerk session check throws a network error, redirect to /login without a returnUrl. Do not display a 500 error page.
+3. If the user lands on /login while already authenticated, redirect immediately to the dashboard root. Do not render the login form.
+
+## 4. REGRESSION_FENCE
+- No dependencies declared. No preservation rules required.
+
+## 5. CONTEXT_DEBT_NOTE
+The returnUrl stripping rule (unhappy path 1) was added after a security review on 2026-03-14. The decision was to strip silently rather than show an error, because the UX team found error messages on redirect caused user confusion. Do not change this behaviour without a new security review.

@@ -1,0 +1,35 @@
+---
+id: LS-FIXTURE-005
+version: 1.0.0
+domain: test/stale-validation
+requires: []
+owner: Fixture Author
+validated_against: 2020-01-01
+---
+
+<!-- validated_against is 2020-01-01 — intentionally ancient to trigger stale-validation warning -->
+
+## 1. TARGET_BOUNDARIES
+runtime:
+  - Node.js 22
+
+authorized_files:
+  - src/routes/profile.js
+
+forbidden_files:
+  - .env.production
+
+## 2. INTENT_HAPPY_PATH
+1. Authenticated user sends a PATCH request to /profile with updated display name and avatar URL.
+2. System validates that the display name is between 2 and 50 characters and the avatar URL uses HTTPS.
+3. System updates the profile record and returns the updated user object.
+
+## 3. EDGE_CRITICAL_UNHAPPY_PATH
+1. If the display name fails length validation, return a 400 with the message "Display name must be between 2 and 50 characters."
+2. If the avatar URL is not HTTPS, return a 400 with the message "Avatar URL must use HTTPS."
+
+## 4. REGRESSION_FENCE
+- No dependencies declared. No preservation rules required.
+
+## 5. CONTEXT_DEBT_NOTE
+This is a test fixture for the stale-validation lint rule. The validated_against date is intentionally set to 2020-01-01 to trigger the staleness warning. Note: stale-validation is a warning, not an error — compilation is not blocked by this fixture alone.

@@ -1,0 +1,44 @@
+---
+id: LS-2026-042
+version: 1.1.0
+domain: auth/session-sync
+requires: [LS-2026-001]
+owner: S. Torres (PA)
+validated_against: 2026-01-10
+---
+
+## 1. TARGET_BOUNDARIES
+runtime:
+  - TypeScript 5.4 / Next.js 15 App Router
+
+data_stores:
+  - Neon PostgreSQL via drizzle-orm/neon-http
+  - Clerk session API (read-only)
+
+authorized_files:
+  - src/middleware.ts
+  - src/db/schema/users.ts
+  - src/lib/session.ts
+
+forbidden_files:
+  - src/db/schema/core.ts
+  - src/db/migrations/**
+  - .env.production
+
+## 2. INTENT_HAPPY_PATH
+1. User makes any authenticated request to the application.
+2. Middleware intercepts the request and extracts the Clerk session token.
+3. The system checks whether a matching user profile exists in the database.
+4. If the profile is missing, the system creates it via an async upsert.
+5. The request proceeds to its intended route with a validated session.
+
+## 3. EDGE_CRITICAL_UNHAPPY_PATH
+1. If the Neon HTTP driver times out (>1500ms), fall back to the client-side Clerk session cache. Log severity:warn to telemetry. Do not throw a 500 error page.
+2. If the Clerk session email is null or empty, reject the request immediately and redirect to /login?error=invalid_profile. Do not attempt the database upsert.
+3. If the upsert fails with a duplicate-key constraint, treat as success — the profile already exists. Do not surface this as an error.
+
+## 4. REGRESSION_FENCE
+- LS-2026-001 — Public routes (/login, /signup, /api/health) must bypass this middleware entirely. Do not add session checks to them.
+
+## 5. CONTEXT_DEBT_NOTE
+The drizzle-orm/neon-http driver was chosen over the WebSocket driver because of Vercel Edge Runtime constraints (no persistent connections). Do not refactor to the WebSocket driver even if it appears more standard. The 1500ms timeout threshold was agreed with the infrastructure team on 2026-04-12. Do not adjust without their sign-off.

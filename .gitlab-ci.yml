@@ -1,0 +1,17 @@
+image: node:22-alpine
+
+stages:
+  - lint
+
+cache:
+  paths:
+    - node_modules/
+
+lint-specs:
+  stage: lint
+  script:
+    - npm install --silent
+    - node bin/lsd.js lint specs/ --plain --strict
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+    - if: '$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH'

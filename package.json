@@ -1,0 +1,28 @@
+{
+  "name": "lsd-forge",
+  "version": "1.0.0",
+  "description": "LSD FORGE — Logic-Spec Development hardening engine. Spec-first AI-assisted development with adversarial refinement.",
+  "main": "linter/index.js",
+  "bin": {
+    "forge":     "./bin/forge.js",
+    "forge-mcp": "./bin/forge-mcp.js"
+  },
+  "files": [
+    "bin/",
+    "linter/",
+    "compiler/",
+    "init/",
+    "forge/",
+    "assets/"
+  ],
+  "scripts": {
+    "test": "node bin/forge.js lint specs/examples/ --plain",
+    "lint": "node bin/forge.js lint",
+    "lint:ci": "node bin/forge.js lint --plain --strict"
+  },
+  "keywords": ["ai", "requirements", "spec", "linter", "logic-spec", "lsd", "forge", "agent"],
+  "license": "MIT",
+  "dependencies": {
+    "gray-matter": "^4.0.3"
+  }
+}

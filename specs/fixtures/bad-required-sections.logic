@@ -1,0 +1,29 @@
+---
+id: LS-FIXTURE-001
+version: 1.0.0
+domain: test/missing-sections
+requires: []
+owner: Fixture Author
+validated_against: 2026-06-03
+---
+
+## 1. TARGET_BOUNDARIES
+runtime:
+  - Node.js 22
+
+authorized_files:
+  - src/handler.js
+
+forbidden_files:
+  - .env.production
+
+## 2. INTENT_HAPPY_PATH
+1. User submits the registration form with a valid email and password.
+2. System checks the email is not already registered.
+3. System creates the account and sends a verification email.
+
+## 3. EDGE_CRITICAL_UNHAPPY_PATH
+1. If the email is already registered, return a 409 with the message "An account with this email already exists." Do not reveal whether a password exists.
+2. If the email service times out after 3 seconds, create the account anyway and enqueue the verification email for retry. Do not block account creation on email delivery.
+
+<!-- REGRESSION_FENCE and CONTEXT_DEBT_NOTE are intentionally omitted to trigger required-sections errors -->

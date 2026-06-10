@@ -1,0 +1,9 @@
+---
+id: [LS-FIXTURE-EDGE-001
+version: 1.0.0
+---
+
+## 1. TARGET_BOUNDARIES
+This section exists but the front matter above is broken YAML — the array bracket is unclosed,
+which causes gray-matter to throw a parse error. The parser must return { parseError: string }
+rather than throwing.

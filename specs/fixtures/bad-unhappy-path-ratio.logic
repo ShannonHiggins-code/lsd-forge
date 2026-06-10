@@ -1,0 +1,38 @@
+---
+id: LS-FIXTURE-003
+version: 1.0.0
+domain: test/unhappy-path-ratio
+requires: []
+owner: Fixture Author
+validated_against: 2026-06-03
+---
+
+## 1. TARGET_BOUNDARIES
+runtime:
+  - TypeScript 5.4 / Next.js 15 App Router
+
+authorized_files:
+  - src/app/api/checkout/route.ts
+  - src/lib/stripe.ts
+
+forbidden_files:
+  - .env.production
+  - src/db/schema/core.ts
+
+## 2. INTENT_HAPPY_PATH
+1. Authenticated user navigates to the checkout page and selects a subscription plan.
+2. User enters valid payment card details into the Stripe Elements form.
+3. Client submits the payment intent to /api/checkout.
+4. Route handler creates a Stripe PaymentIntent and confirms the charge.
+5. On success, system updates the user subscription status to "active" and redirects to /dashboard.
+
+<!-- 5 happy steps → minimum unhappy = ceil(5/2) = 3. Only 1 provided below → triggers error -->
+
+## 3. EDGE_CRITICAL_UNHAPPY_PATH
+1. If Stripe returns a card-declined error, surface the decline code to the user as a human-readable message. Do not retry the charge automatically.
+
+## 4. REGRESSION_FENCE
+- No dependencies declared. No preservation rules required.
+
+## 5. CONTEXT_DEBT_NOTE
+This is a test fixture for the unhappy-path-ratio lint rule. It has 5 happy-path steps and only 1 unhappy-path step. The minimum required is ceil(5 / 2) = 3, so this intentionally triggers an error.

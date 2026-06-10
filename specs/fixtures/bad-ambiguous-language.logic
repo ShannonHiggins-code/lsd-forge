@@ -1,0 +1,37 @@
+---
+id: LS-FIXTURE-004
+version: 1.0.0
+domain: test/ambiguous-language
+requires: []
+owner: Fixture Author
+validated_against: 2026-06-03
+---
+
+## 1. TARGET_BOUNDARIES
+runtime:
+  - Node.js 22 / Express 4
+
+authorized_files:
+  - src/routes/upload.js
+  - src/lib/storage.js
+
+forbidden_files:
+  - .env.production
+
+## 2. INTENT_HAPPY_PATH
+1. Authenticated user sends a POST request to /upload with a multipart form containing a file.
+2. Route handler will validate input and reject the file if the MIME type is not in the allowed list.
+3. If the file is accepted, process the request by streaming it to cloud storage and recording the upload metadata.
+4. Return a 201 response with the file URL and storage key.
+
+<!-- Steps 2 and 3 contain "validate input" and "process the request" — both in AMBIGUOUS_PHRASES -->
+
+## 3. EDGE_CRITICAL_UNHAPPY_PATH
+1. If the file exceeds 50MB, return a 413 with the message "File too large. Maximum size is 50MB."
+2. If the cloud storage write fails after 3 retry attempts, return a 503 and log the error to telemetry with the file hash and user ID.
+
+## 4. REGRESSION_FENCE
+- No dependencies declared. No preservation rules required.
+
+## 5. CONTEXT_DEBT_NOTE
+This is a test fixture for the ambiguous-language lint rule. Steps 2 and 3 of the happy path intentionally contain "validate input" and "process the request", which are in the AMBIGUOUS_PHRASES list and trigger errors.
