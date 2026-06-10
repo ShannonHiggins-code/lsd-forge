@@ -43,6 +43,10 @@ VERIFY_COMMAND   config.verify_command
 Call `forge_spec_list`. Keep the full result in context — you will need it in Phase 2 (file
 conflict check) and Phase 6 (dependency discovery).
 
+After the user provides their description in Phase 1, call `forge_search` with that description.
+Use the results to pre-populate Phase 6 (dependency candidates) and to warn the user if the
+feature sounds like it is already specced.
+
 ---
 
 ## PHASE 1: INTENT CAPTURE

@@ -83,6 +83,34 @@ function render(payload) {
     }
   }
 
+  // ── Dependency contracts ───────────────────────────────────────────────────
+  if (payload.dependencies && payload.dependencies.length > 0) {
+    lines.push('── DEPENDENCY CONTRACTS ────────────────────────');
+    lines.push('The specs below are prerequisites. Their contracts apply to your implementation.');
+    lines.push('');
+
+    for (const dep of payload.dependencies) {
+      lines.push(`  [${dep.id}]  ${dep.domain}`);
+
+      if (dep.forbidden_files && dep.forbidden_files.length > 0) {
+        lines.push('  You MUST NOT touch (inherited from dependency):');
+        dep.forbidden_files.forEach(f => lines.push(`    ✗ ${f}`));
+      }
+
+      const fence = (dep.regression_fence || []).filter(r =>
+        r.trim().length > 5 &&
+        !r.toLowerCase().includes('no dependencies') &&
+        !r.toLowerCase().includes('no preservation')
+      );
+      if (fence.length > 0) {
+        lines.push('  You MUST NOT break (dependency fence):');
+        fence.forEach(r => lines.push(`    ! ${r}`));
+      }
+
+      lines.push('');
+    }
+  }
+
   // ── Context debt ───────────────────────────────────────────────────────────
   if (payload.context_debt && payload.context_debt.length > 10) {
     lines.push('── ARCHITECTURAL CONTEXT ───────────────────────');

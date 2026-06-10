@@ -47,7 +47,7 @@ function compile(filePath, opts = {}) {
 
     // Warnings do not block compilation — they are passed through
     const parsed     = parse(filePath);
-    const structured = extract(parsed);
+    const structured = extract(parsed, filePath);
     const payload    = render(structured);
 
     return {
@@ -61,7 +61,7 @@ function compile(filePath, opts = {}) {
 
   // ── skipLint path (testing / advanced use) ────────────────────────────────
   const parsed     = parse(filePath);
-  const structured = extract(parsed);
+  const structured = extract(parsed, filePath);
   const payload    = render(structured);
 
   return {

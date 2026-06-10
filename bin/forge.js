@@ -352,6 +352,7 @@ Usage:
   forge status                Show registry health, spec count, and unspecced services
   forge coverage              Gap report — which services have no spec
   forge validate              Cross-spec collision detection
+  forge search <description>  Find specs related to a plain-language description
   forge touched <file...>     Show specs affected by these files
   forge touched --staged      Show specs affected by staged git files
   forge mcp                   Print MCP server setup instructions
@@ -414,6 +415,25 @@ if (command === 'init') {
   if (!result.ok && result.error) { console.error(`Error: ${result.error}`); process.exit(2); }
   console.log(formatValidate(result, flags));
   process.exit(result.ok ? 0 : 1);
+
+} else if (command === 'search') {
+  const { search, formatSearch } = require('../forge/search');
+
+  const description = targets.join(' ').trim();
+  if (!description) {
+    console.error('Error: forge search requires a description. Example: forge search "add rate limiting to auth"');
+    process.exit(2);
+  }
+
+  const results = search(process.cwd(), description, { limit: 10 });
+
+  if (flags.json) {
+    console.log(JSON.stringify(results, null, 2));
+    process.exit(0);
+  }
+
+  console.log(formatSearch(results, description, flags));
+  process.exit(0);
 
 } else if (command === 'touched') {
   const { touched, formatTouched } = require('../forge/touched');

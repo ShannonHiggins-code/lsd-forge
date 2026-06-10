@@ -84,6 +84,18 @@ const TOOLS = [
     inputSchema: { type: 'object', properties: {} },
   },
   {
+    name: 'forge_search',
+    description: 'Search the spec library for specs related to a plain-language description. Call at the start of any implementation session to discover which specs are relevant before touching code. Results are ranked by relevance.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        description: { type: 'string',  description: 'Plain-language description of what you are building or investigating' },
+        limit:       { type: 'number',  description: 'Maximum results to return (default 5)' },
+      },
+      required: ['description'],
+    },
+  },
+  {
     name: 'forge_touched',
     description: 'Given a list of file paths, return every spec that authorizes any of them. Call this before modifying files to discover which specs are affected and which regression fences apply. Essential for safe refactoring.',
     inputSchema: {
@@ -158,6 +170,12 @@ function callTool(name, args, projectRoot) {
 
       case 'forge_spec_list': {
         return textResult(specList(projectRoot), false);
+      }
+
+      case 'forge_search': {
+        const { search, formatSearch } = require('./search');
+        const results = search(projectRoot, args.description || '', { limit: args.limit || 5 });
+        return textResult(formatSearch(results, args.description, { plain: true }), false);
       }
 
       case 'forge_touched': {
