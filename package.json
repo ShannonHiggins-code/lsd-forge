@@ -7,14 +7,27 @@
     "forge": "./bin/forge.js",
     "forge-mcp": "./bin/forge-mcp.js"
   },
+  "engines": {
+    "node": ">=18.0.0"
+  },
   "files": [
     "bin/",
     "linter/",
     "compiler/",
     "init/",
     "forge/",
-    "assets/"
+    "assets/",
+    "TERMS.md"
   ],
+  "repository": {
+    "type": "git",
+    "url": "https://gitlab.com/nagashi-group/lsd-forge.git"
+  },
+  "bugs": {
+    "url": "https://gitlab.com/nagashi-group/lsd-forge/-/issues",
+    "email": "shannonhiggins@outlook.com"
+  },
+  "homepage": "https://gitlab.com/nagashi-group/lsd-forge",
   "scripts": {
     "test": "node bin/forge.js lint specs/examples/ --plain",
     "lint": "node bin/forge.js lint",
