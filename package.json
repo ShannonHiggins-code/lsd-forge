@@ -4,8 +4,8 @@
   "description": "LSD FORGE — Logic-Spec Development hardening engine. Spec-first AI-assisted development with adversarial refinement.",
   "main": "linter/index.js",
   "bin": {
-    "forge": "./bin/forge.js",
-    "forge-mcp": "./bin/forge-mcp.js"
+    "forge": "bin/forge.js",
+    "forge-mcp": "bin/forge-mcp.js"
   },
   "engines": {
     "node": ">=18.0.0"
@@ -21,7 +21,7 @@
   ],
   "repository": {
     "type": "git",
-    "url": "https://gitlab.com/nagashi-group/lsd-forge.git"
+    "url": "git+https://gitlab.com/nagashi-group/lsd-forge.git"
   },
   "bugs": {
     "url": "https://gitlab.com/nagashi-group/lsd-forge/-/issues",
