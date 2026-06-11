@@ -22,7 +22,7 @@ forge --version
 forge lint specs/
 ```
 
-If `lsd` is not found: the package is not installed. Ask the user to run `npm install lsd-forge --save-dev && npx forge init`.
+If `forge` is not found: the package is not installed. Ask the user to run `npm install lsd-forge --save-dev && npx forge init`. Full documentation at https://authori.us/lsd-forge
 
 If `specs/` has lint errors: report them to the user before continuing. Do not start new work on a broken spec baseline.
 

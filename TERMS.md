@@ -226,7 +226,8 @@ Questions, concerns, or notices regarding these Terms should be directed to:
 Nagashi Limited
 Carson City, Nevada, United States
 [shannonhiggins@outlook.com](mailto:shannonhiggins@outlook.com)
+[authori.us/lsd-forge](https://authori.us/lsd-forge)
 
 ---
 
-*These Terms of Service were last updated on June 10, 2026. Nagashi Limited recommends that organisations deploying LSD FORGE in production environments have these Terms reviewed by qualified legal counsel in their jurisdiction.*
+*These Terms of Service were last updated on June 11, 2026. The authoritative version of these Terms is published at [authori.us/lsd-forge](https://authori.us/lsd-forge). Nagashi Limited recommends that organisations deploying LSD FORGE in production environments have these Terms reviewed by qualified legal counsel in their jurisdiction.*

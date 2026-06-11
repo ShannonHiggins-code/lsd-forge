@@ -2,6 +2,8 @@
 
 **Spec-first AI-assisted development. Install once — any AI you connect self-onboards, maps your project, and operates within defined authorization boundaries.**
 
+**[authori.us/lsd-forge](https://authori.us/lsd-forge)** — documentation, guides, and examples
+
 ```bash
 npm install lsd-forge --save-dev
 npx forge init
@@ -532,9 +534,11 @@ module.exports = {
 
 **Shannon Higgins** — Nagashi Limited, Carson City, NV
 
+Documentation and guides: [authori.us/lsd-forge](https://authori.us/lsd-forge)
+
 Questions, adoption guidance, or collaboration: [shannonhiggins@outlook.com](mailto:shannonhiggins@outlook.com)
 
-Built at [Nagashi Limited](https://gitlab.com/nagashi-group) — the holding company behind the Authori product suite.
+Built at [Nagashi Limited](https://authori.us) — the holding company behind the Authori product suite.
 
 ---
 

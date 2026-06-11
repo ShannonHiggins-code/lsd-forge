@@ -27,7 +27,7 @@
     "url": "https://gitlab.com/nagashi-group/lsd-forge/-/issues",
     "email": "shannonhiggins@outlook.com"
   },
-  "homepage": "https://gitlab.com/nagashi-group/lsd-forge",
+  "homepage": "https://authori.us/lsd-forge",
   "scripts": {
     "test": "node bin/forge.js lint specs/examples/ --plain",
     "lint": "node bin/forge.js lint",
@@ -36,7 +36,7 @@
   "author": {
     "name": "Shannon Higgins",
     "email": "shannonhiggins@outlook.com",
-    "url": "https://gitlab.com/nagashi-group"
+    "url": "https://authori.us"
   },
   "keywords": [
     "ai",

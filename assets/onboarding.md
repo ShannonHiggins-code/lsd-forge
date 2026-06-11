@@ -12,8 +12,10 @@ Execute the DISCOVERY PROTOCOL below before starting any task.
 ## What LSD Is
 
 LSD is a spec-first methodology. Before writing code, you author a `.logic` file that defines
-intent, edge cases, and authorization boundaries in a machine-verifiable format. The `lsd` CLI
+intent, edge cases, and authorization boundaries in a machine-verifiable format. The `forge` CLI
 lints specs for completeness and compiles them into an agent payload you execute against.
+
+Documentation and guides: https://authori.us/lsd-forge
 
 Every task in this project follows this sequence:
 ```
