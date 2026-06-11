@@ -137,6 +137,7 @@ const TOOL_SHORTCUTS = [
 
 /**
  * Install forge-new shortcuts for every detected AI tool.
+ * Skips files that already exist (safe for first install).
  * @returns {string[]} labels of shortcuts that were installed
  */
 function installShortcuts(projectRoot, postureFiles) {
@@ -149,6 +150,85 @@ function installShortcuts(projectRoot, postureFiles) {
     } catch (_) {}
   }
   return installed;
+}
+
+// ── Upgrade helpers ───────────────────────────────────────────────────────────
+
+function forceInstallDir(srcDir, destDir, ext) {
+  if (!fs.existsSync(srcDir)) return 0;
+  if (!fs.existsSync(destDir)) fs.mkdirSync(destDir, { recursive: true });
+  let count = 0;
+  for (const file of fs.readdirSync(srcDir)) {
+    if (ext && !file.endsWith(ext)) continue;
+    fs.copyFileSync(path.join(srcDir, file), path.join(destDir, file));
+    count++;
+  }
+  return count;
+}
+
+function forceInstallShortcuts(projectRoot, postureFiles) {
+  const updated = [];
+  const pf      = postureFiles || [];
+
+  if (forceInstallDir(path.join(ASSETS_DIR, 'commands'), path.join(projectRoot, '.claude', 'commands'), '.md') > 0)
+    updated.push('.claude/commands/');
+
+  if (pf.some(f => f.includes('.cursor')))
+    if (forceInstallDir(path.join(ASSETS_DIR, 'cursor-rules'), path.join(projectRoot, '.cursor', 'rules')) > 0)
+      updated.push('.cursor/rules/');
+
+  if (pf.some(f => f.includes('.windsurf')))
+    if (forceInstallDir(path.join(ASSETS_DIR, 'windsurf-rules'), path.join(projectRoot, '.windsurf', 'rules'), '.md') > 0)
+      updated.push('.windsurf/rules/');
+
+  if (pf.includes('.github/copilot-instructions.md'))
+    if (forceInstallDir(path.join(ASSETS_DIR, 'copilot-prompts'), path.join(projectRoot, '.github', 'prompts'), '.prompt.md') > 0)
+      updated.push('.github/prompts/');
+
+  return updated;
+}
+
+/**
+ * Replace the lsd-forge section of an existing pre-commit hook with the
+ * current hook script. Preserves any custom content before the marker.
+ * Returns 'updated' | 'no-hook' | 'no-marker'
+ */
+function upgradeHook(projectRoot) {
+  const hookPath = path.join(projectRoot, '.git', 'hooks', 'pre-commit');
+  if (!fs.existsSync(hookPath)) return 'no-hook';
+  const MARKER   = '# lsd-forge-hook';
+  const existing = fs.readFileSync(hookPath, 'utf8');
+  if (!existing.includes(MARKER)) return 'no-marker';
+  const before = existing.slice(0, existing.indexOf(MARKER));
+  fs.writeFileSync(hookPath, before + hookScript(MARKER), 'utf8');
+  return 'updated';
+}
+
+/**
+ * Refresh an existing .lsd/ install — overwrites skills, onboarding, and
+ * shortcut command files. Never touches config.json or registry.json.
+ * @returns {string[]} human-readable list of what was updated
+ */
+function upgradeLsdDir(projectRoot, config, postureFiles) {
+  const lsdDir    = path.join(projectRoot, '.lsd');
+  const skillsDir = path.join(lsdDir, 'skills');
+
+  if (!fs.existsSync(lsdDir))    fs.mkdirSync(lsdDir,    { recursive: true });
+  if (!fs.existsSync(skillsDir)) fs.mkdirSync(skillsDir, { recursive: true });
+
+  const updated = [];
+
+  writeOnboarding(lsdDir, config);
+  updated.push('.lsd/onboarding.md');
+
+  copySkills(skillsDir);
+  const skillCount = fs.readdirSync(path.join(ASSETS_DIR, 'skills')).filter(f => f.endsWith('.md')).length;
+  updated.push(`.lsd/skills/  (${skillCount} files)`);
+
+  const shortcuts = forceInstallShortcuts(projectRoot, postureFiles || []);
+  updated.push(...shortcuts);
+
+  return updated;
 }
 
 function writeRegistryShell(lsdDir, config) {
@@ -277,4 +357,4 @@ fi
 `;
 }
 
-module.exports = { writeLsdDir, scaffoldSpecs, patchPackageJson, installPreCommitHook, installShortcuts };
+module.exports = { writeLsdDir, upgradeLsdDir, upgradeHook, scaffoldSpecs, patchPackageJson, installPreCommitHook, installShortcuts };

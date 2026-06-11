@@ -1,17 +1,21 @@
 'use strict';
 
+const fs   = require('fs');
+const path = require('path');
 const { detectStack, detectTestCommand, detectPostureFiles, detectProjectName } = require('./detect');
-const { writeLsdDir, scaffoldSpecs, patchPackageJson, installPreCommitHook } = require('./scaffold');
+const { writeLsdDir, upgradeLsdDir, upgradeHook, scaffoldSpecs, patchPackageJson, installPreCommitHook } = require('./scaffold');
 const { augmentPostureFiles } = require('./augment');
 const pkg = require('../package.json');
 
 /**
- * Bootstrap LSD into a project directory.
- * @param {string} projectRoot  absolute path to the project root
- * @returns {{ ok: boolean, config: object, error?: string }}
+ * Bootstrap or upgrade LSD FORGE in a project directory.
+ * opts.upgrade = true  → refresh skills/onboarding/shortcuts/hook, preserve config + registry
+ * opts.upgrade = false → full bootstrap (default)
  */
-function init(projectRoot) {
+function init(projectRoot, opts = {}) {
   const log = msg => process.stdout.write(msg + '\n');
+
+  if (opts.upgrade) return runUpgrade(projectRoot, log);
 
   log('\nforge init — bootstrapping LSD FORGE\n');
 
@@ -123,6 +127,66 @@ function init(projectRoot) {
   log('\n  Done.\n');
   log('  Any AI model working in this project will now auto-onboard via .lsd/onboarding.md');
   log('  Next: open .lsd/config.json and verify the authorized/forbidden paths for your project.\n');
+
+  return { ok: true, config };
+}
+
+// ── Upgrade mode ──────────────────────────────────────────────────────────────
+
+function runUpgrade(projectRoot, log) {
+  log('\nforge init --upgrade — refreshing LSD FORGE skill kit\n');
+
+  const lsdPath = path.join(projectRoot, '.lsd', 'config.json');
+  if (!fs.existsSync(lsdPath)) {
+    return {
+      ok: false,
+      error: 'No .lsd/config.json found. Run forge init (without --upgrade) for a first install.',
+    };
+  }
+
+  // Read existing config — preserve all project-specific values
+  let existingConfig;
+  try {
+    existingConfig = JSON.parse(fs.readFileSync(lsdPath, 'utf8'));
+  } catch (err) {
+    return { ok: false, error: `Could not read .lsd/config.json: ${err.message}` };
+  }
+
+  const postureFiles = detectPostureFiles(projectRoot);
+  const config = { ...existingConfig, lsd_version: pkg.version };
+
+  // ── Refresh skills, onboarding, shortcuts ──────────────────────────────────
+
+  log('  Refreshing...');
+  let updated;
+  try {
+    updated = upgradeLsdDir(projectRoot, config, postureFiles);
+  } catch (err) {
+    return { ok: false, error: `Upgrade failed: ${err.message}` };
+  }
+  for (const u of updated) log(`  ✓ ${u}`);
+
+  // ── Upgrade pre-commit hook ────────────────────────────────────────────────
+
+  const hookResult = upgradeHook(projectRoot);
+  if (hookResult === 'updated')   log('  ✓ Pre-commit hook updated');
+  if (hookResult === 'no-hook')   log('  ⚠ No pre-commit hook found — run forge init to install');
+  if (hookResult === 'no-marker') log('  ⚠ Pre-commit hook exists but has no LSD FORGE section');
+
+  // ── Stamp new version in config.json ──────────────────────────────────────
+
+  try {
+    existingConfig.lsd_version = pkg.version;
+    fs.writeFileSync(lsdPath, JSON.stringify(existingConfig, null, 2) + '\n', 'utf8');
+    log(`  ✓ .lsd/config.json  lsd_version → ${pkg.version}`);
+  } catch (_) {}
+
+  // ── Done ──────────────────────────────────────────────────────────────────
+
+  log('\n  Upgrade complete.\n');
+  log('  Review changes:  git diff .lsd/');
+  log('  Validate specs:  forge lint specs/ --strict --plain');
+  log('  Check health:    forge status && forge validate\n');
 
   return { ok: true, config };
 }

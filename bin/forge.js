@@ -346,6 +346,7 @@ lsd-forge — Logic-Spec Development hardening engine
 
 Usage:
   forge init                  Bootstrap LSD FORGE into the current project
+  forge init --upgrade        Refresh skills, onboarding, and shortcuts — preserves config.json and registry.json
   forge new                   Interactive wizard — author a new .logic spec
   forge lint [path]           Lint a .logic file or directory
   forge compile <file>        Compile a validated .logic file into an agent payload
@@ -390,7 +391,7 @@ Exit codes:
 
 if (command === 'init') {
   const { init } = require('../init/index');
-  const result = init(process.cwd());
+  const result = init(process.cwd(), { upgrade: args.includes('--upgrade') });
   process.exit(result.ok ? 0 : 1);
 
 } else if (command === 'status') {

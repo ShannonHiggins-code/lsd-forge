@@ -96,6 +96,7 @@ Load skills from `.lsd/skills/` before starting any task:
 |-------|-------------|
 | `forge-new.md` | **Author a new spec in chat** — guided intake conversation; interprets intent, builds each section, stress-tests before writing |
 | `rsc-ar.md` | Harden an existing draft — Proposer → Adversary → Resolver loop |
+| `upgrade.md` | Pick up a new version of lsd-forge — refresh skills without clobbering config |
 | `spec-authoring.md` | `.logic` format reference and lint rules |
 | `self-refinement.md` | Self-correction, chain-of-thought verification, self-consistency for decisions |
 | `onboarding.md` | Full discovery protocol — run on first session or when registry is stale |
