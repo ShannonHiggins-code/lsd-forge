@@ -1,10 +1,10 @@
 {
   "name": "lsd-forge",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "LSD FORGE — Logic-Spec Development hardening engine. Spec-first AI-assisted development with adversarial refinement.",
   "main": "linter/index.js",
   "bin": {
-    "forge":     "./bin/forge.js",
+    "forge": "./bin/forge.js",
     "forge-mcp": "./bin/forge-mcp.js"
   },
   "files": [
@@ -25,7 +25,16 @@
     "email": "shannonhiggins@outlook.com",
     "url": "https://gitlab.com/nagashi-group"
   },
-  "keywords": ["ai", "requirements", "spec", "linter", "logic-spec", "lsd", "forge", "agent"],
+  "keywords": [
+    "ai",
+    "requirements",
+    "spec",
+    "linter",
+    "logic-spec",
+    "lsd",
+    "forge",
+    "agent"
+  ],
   "license": "MIT",
   "dependencies": {
     "gray-matter": "^4.0.3"
