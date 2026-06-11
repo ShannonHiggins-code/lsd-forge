@@ -396,11 +396,34 @@ if (command === 'init') {
 
 } else if (command === 'status') {
   const { status, formatStatus } = require('../forge/status');
+  const { refreshVersionCache, getUpdateNotice, isCacheStale } = require('../forge/version-check');
+
   const result = status(process.cwd(), flags);
   if (!result.ok) { console.error(`Error: ${result.error}`); process.exit(2); }
-  if (flags.json) { console.log(JSON.stringify(result.data, null, 2)); }
-  else            { console.log(formatStatus(result.data, flags)); }
-  process.exit(0);
+
+  if (flags.json) {
+    console.log(JSON.stringify(result.data, null, 2));
+    process.exit(0);
+  }
+
+  console.log(formatStatus(result.data, flags));
+
+  // Show cached update notice immediately if one exists
+  const cachedNotice = getUpdateNotice(process.cwd(), flags);
+  if (cachedNotice) console.log(cachedNotice + '\n');
+
+  // Refresh the version cache if stale — process exits after the check completes
+  if (isCacheStale(process.cwd())) {
+    refreshVersionCache(process.cwd()).then(updated => {
+      // If this check just revealed an update for the first time, show it now
+      if (updated && updated.updateAvailable && !cachedNotice) {
+        const freshNotice = getUpdateNotice(process.cwd(), flags);
+        if (freshNotice) console.log(freshNotice + '\n');
+      }
+    }).finally(() => { process.exitCode = 0; });
+  } else {
+    process.exit(0);
+  }
 
 } else if (command === 'coverage') {
   const { coverage, formatCoverage } = require('../forge/coverage');

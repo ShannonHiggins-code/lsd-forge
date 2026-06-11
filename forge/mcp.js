@@ -141,7 +141,10 @@ function callTool(name, args, projectRoot) {
       case 'forge_status': {
         const result = status(projectRoot, { plain: true });
         if (!result.ok) return textResult(`Error: ${result.error}`, true);
-        return textResult(formatStatus(result.data, { plain: true }), false);
+        const { getUpdateNotice } = require('./version-check');
+        const notice = getUpdateNotice(projectRoot, { plain: true });
+        const text   = formatStatus(result.data, { plain: true }) + (notice ? '\n' + notice + '\n' : '');
+        return textResult(text, false);
       }
 
       case 'forge_coverage': {
