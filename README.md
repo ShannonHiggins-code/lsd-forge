@@ -103,7 +103,9 @@ The `/forge-new` slash command opens a guided 11-phase conversation. Your AI int
 ```
 
 Also installs:
-- **Pre-commit hook** — staged `.logic` files are linted with `--strict` before every commit
+- **Pre-commit hook** — two checks on every commit:
+  1. Staged `.logic` files are linted with `--strict` — blocks the commit on errors
+  2. Staged code files are checked against the spec library with `forge touched --staged` — warns (non-blocking) if any staged file is authorized in an existing spec, prompting re-validation
 - **`lint:specs` script** in `package.json`
 - **LSD block** prepended to any AI posture files found (`CLAUDE.md`, `.cursor/rules`, `.github/copilot-instructions.md`, and others)
 - **`/forge-new` shortcut** in the appropriate format for every detected AI tool:
@@ -176,7 +178,7 @@ Pick a date — the **spec line**. From that date:
 - **Change to a specced service** → update the spec first, lint must pass
 - **Change to an unspecced service** → author the spec as part of the ticket
 
-The pre-commit hook only fires on staged `.logic` files. Existing unspecced code is never blocked — only new and modified specs are gated.
+The pre-commit hook fires on two things: staged `.logic` files (blocks on lint errors) and staged code files (warns if any file is authorized in an existing spec). Existing unspecced code is never blocked — only new and modified specs are hard-gated, and code changes in specced domains get a soft warning to re-validate.
 
 ### The coverage target
 
@@ -234,6 +236,18 @@ All five sections are required. A spec missing any section will not lint. A spec
 
 The `requires` field lists spec IDs this spec depends on. `/forge-new` surfaces related specs and asks which are prerequisites before writing the file.
 
+When a spec with `requires` is compiled, the payload automatically includes a **DEPENDENCY CONTRACTS** block — the forbidden files and regression fence items from every required spec are inherited. The implementing agent sees the full constraint surface without reading the dependency specs separately.
+
+```
+── DEPENDENCY CONTRACTS ────────────────────────
+  [LS-2026-001]  auth/login-redirect
+  You MUST NOT touch (inherited from dependency):
+    ✗ src/db/schema/core.ts
+    ✗ .env.production
+  You MUST NOT break (dependency fence):
+    ! Existing authenticated sessions must remain valid after this change.
+```
+
 ---
 
 ## Lint rules
@@ -258,7 +272,7 @@ Errors block compilation. Warnings do not — unless `--strict` is passed.
 
 **Phase 1 — Intent capture.** One open question: "What do you want to build?" No forms, no structure yet.
 
-**Phase 2 — Interpretation.** The AI shows its reading of your description — domain, runtime, data stores, security sensitivity. You correct it before any sections are touched.
+**Phase 2 — Interpretation.** The AI calls `forge_search` with your description to surface related specs, then shows its reading — domain, runtime, data stores, security sensitivity. Related specs are shown as dependency candidates. You correct the interpretation before any sections are touched.
 
 **Phase 3 — TARGET\_BOUNDARIES.** Before proposing files, the AI calls `forge_spec_list` and checks whether any proposed path is already authorized in another spec. Conflicts are surfaced before you confirm.
 
@@ -349,6 +363,30 @@ Cross-spec collision detection across all `.logic` files. Finds:
 - **domain-overlap** (warning) — two specs share the same domain
 - **shared-authorization** (warning) — same file authorized across multiple specs
 
+### `forge search <description>`
+Find specs related to a plain-language description. Keyword scoring over domain, intent steps, authorized file paths, and data stores. No external dependencies.
+
+```bash
+forge search "add rate limiting to auth endpoints"
+forge search "stripe payment webhook handling" --plain
+forge search "user profile settings" --json
+```
+
+Useful before starting any implementation task — surface the relevant specs before touching code. The `forge_search` MCP tool provides the same capability directly in AI chat.
+
+### `forge touched <file...>`
+Show every spec that authorizes any of the given file paths. Groups results by spec, shows the matched files and the exact spec to re-validate.
+
+```bash
+forge touched src/middleware.ts
+forge touched src/auth/ src/lib/session.ts
+forge touched --staged           # reads staged files from git automatically
+forge touched --staged --strict  # exits 1 if any specs are affected (for CI)
+forge touched src/middleware.ts --json
+```
+
+The pre-commit hook runs `forge touched --staged` automatically. The `forge_touched` MCP tool provides the same capability in AI chat — an agent planning to modify files should call this first.
+
 ### `forge mcp`
 Prints the exact config block to connect the MCP server to your AI client.
 
@@ -372,13 +410,15 @@ LSD FORGE ships a zero-dependency MCP server (`forge-mcp`) that exposes all forg
 |------|-------------|
 | `forge_new` | Write a new `.logic` spec from structured answers. Accepts `requires` for spec dependencies. |
 | `forge_lint` | Lint a `.logic` spec and return findings |
-| `forge_compile` | Compile a spec and return the agent payload string |
+| `forge_compile` | Compile a spec into an agent payload. Resolves `requires` into inherited dependency contracts. |
 | `forge_status` | Project integration health |
 | `forge_coverage` | Spec coverage gap report |
 | `forge_validate` | Cross-spec collision detection |
 | `forge_spec_list` | List all specs with ID, domain, pass/fail, and `authorized_files` per spec |
+| `forge_search` | Find specs related to a plain-language description. Call at the start of any implementation session to discover relevant specs before touching code. |
+| `forge_touched` | Given a list of file paths, return every spec that authorizes any of them. Call before modifying files to understand which specs are affected and which regression fences apply. |
 
-`forge_spec_list` returns `authorized_files` for each spec so the AI can detect cross-spec path conflicts before writing a new spec.
+`forge_search` and `forge_touched` are the two tools an AI implementation agent should call before writing any code: search to understand what's already specced, touched to know what must not break.
 
 ### Setup
 
@@ -481,6 +521,9 @@ module.exports = {
 - [x] Multi-platform shortcuts — `/forge-new` installed for Claude Code, Copilot, Cursor, Windsurf at `forge init` time
 - [x] Two-session model — authoring and implementation explicitly separated
 - [x] Spec dependencies — `requires` field captured during authoring, cross-referenced against registry
+- [x] Spec composition — compiled payload inherits dependency contracts (forbidden files + regression fence) from all required specs
+- [x] Spec search — `forge search` / `forge_search` — keyword-ranked discovery of related specs from plain-language description
+- [x] Spec mutation detection — `forge touched` / `forge_touched` — maps file paths to authorizing specs; pre-commit hook warns when staged code touches specced domains
 - [ ] Platform adapters — ingest epics and stories from Jira, Linear, GitHub Issues
 
 ---
