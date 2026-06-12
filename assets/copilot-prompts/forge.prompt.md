@@ -1,0 +1,22 @@
+---
+description: LSD FORGE entry point — route to spec authoring, lint, compile, status, coverage, or validate from one command.
+argument-hint: new <description> | lint [path] | compile <file> | status | coverage | validate
+---
+
+# /forge — LSD FORGE
+
+Read `.lsd/config.json`.
+
+${input:What do you want forge to do? (new <description> | lint [path] | compile <file> | status | coverage | validate — or press Enter for status)}
+
+Route on the input above:
+
+- **Empty** — run `npx forge status --plain`, summarize spec health, and list the available actions: `new`, `lint`, `compile`, `status`, `coverage`, `validate`.
+- **`new` or a plain-language description of something to build** — read `.lsd/skills/forge-new.md` and follow the forge-new flow: this session specs and hardens only; a second session implements.
+- **`lint [path]`** — run `npx forge lint <path or specs/> --plain --strict` and report findings with fixes.
+- **`compile <file>`** — run `npx forge compile <file>` and return the agent payload.
+- **`status`** — run `npx forge status --plain` and summarize.
+- **`coverage [--threshold n]`** — run `npx forge coverage --plain` and summarize the gap report.
+- **`validate`** — run `npx forge validate --plain` and report any cross-spec collisions.
+
+For any CLI invocation, paste the actual terminal output before your summary — never report results without it.
