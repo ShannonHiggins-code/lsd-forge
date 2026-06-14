@@ -6,7 +6,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "$input = $input | ConvertFrom-Json; $cmd = $input.tool_input.command; if ($cmd -match '^git commit') { Set-Location 'c:\\Users\\Shann\\Desktop\\LSD'; node bin/lsd.js lint specs/examples/ --plain; if ($LASTEXITCODE -ne 0) { Write-Output '{\"decision\":\"block\",\"reason\":\"lsd lint failed — fix spec errors before committing. Run: node bin/lsd.js lint specs/examples/ --plain\"}'; exit 2 } }",
+            "command": "$input = $input | ConvertFrom-Json; $cmd = $input.tool_input.command; if ($cmd -match '^git commit') { Set-Location 'c:\\Users\\Shann\\Desktop\\LSD'; node bin/forge.js lint specs/examples/ --plain; if ($LASTEXITCODE -ne 0) { Write-Output '{\"decision\":\"block\",\"reason\":\"lsd lint failed — fix spec errors before committing. Run: node bin/forge.js lint specs/examples/ --plain\"}'; exit 2 } }",
             "shell": "powershell",
             "timeout": 60,
             "statusMessage": "Running lsd lint before commit..."

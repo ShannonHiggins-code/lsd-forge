@@ -19,11 +19,8 @@ and pastes that payload as the first message. That agent implements. This agent 
 
 ## When to invoke
 
-- User says "forge new", "create a spec", "I want to spec out X", or describes a feature they want to build
-- Any time a new `.logic` file needs to be authored from scratch
-- As the first step before the RSC-AR loop on a new feature
-
-Do not invoke for edits to an existing spec — that is a lint + edit flow, not an intake flow.
+- User says "forge new", "create a spec", "I want to spec out X", describes a feature they want to build, or describes a change to something that already exists
+- Phase 0 (below) determines automatically whether this is a new spec or an edit to an existing one — do not pre-judge from the user's phrasing alone
 
 ---
 
@@ -40,22 +37,122 @@ SPECS_DIR        config.specs_dir    (default: specs/)
 VERIFY_COMMAND   config.verify_command
 ```
 
-Call `forge_spec_list`. Keep the full result in context — you will need it in Phase 2 (file
-conflict check) and Phase 6 (dependency discovery).
+Call `forge_spec_list`. Keep the full result in context — you will need it for the routing
+decision in Phase 0, the file conflict check in Phase 2, and dependency discovery in Phase 6.
 
-After the user provides their description in Phase 1, call `forge_search` with that description.
-Use the results to pre-populate Phase 6 (dependency candidates) and to warn the user if the
-feature sounds like it is already specced.
+---
+
+## PHASE 0: NEW vs EDIT ROUTING DECISION
+
+**Run this before Phase 1. Do not skip it.**
+
+Ask the user one open question:
+
+> "What do you want to build or change? Describe it in plain language — no structure needed yet."
+
+Wait for the response. Then apply the routing rules below.
+
+### Routing rules
+
+Score each existing spec against the description on two signals:
+
+| Signal | How to check |
+|--------|-------------|
+| Domain overlap | Does the description mention the same product area, page, flow, or integration as an existing spec's `domain`? |
+| File overlap | Do the files the user would likely need to touch fall inside an existing spec's `authorized_files`? |
+
+**Route to EDIT if either signal matches.** Route to NEW only when neither matches.
+
+**Ask before routing** when: the description is large enough that it could be a full replacement rather than an amendment, or when two or more existing specs partially overlap with it.
+
+### Presenting the routing decision
+
+Always surface the decision and its reason before proceeding. Never silently enter edit mode.
+
+**If routing to EDIT:**
+
+```
+This sounds like a change to an existing spec rather than a brand-new feature.
+
+  Existing spec:  LS-YYYY-NNN — [plain-language description of what it covers]
+  Last validated: [validated_against date]
+  Covers:         [plain-language summary of authorized files]
+
+I'll work within that spec — editing the relevant sections and bumping the version —
+rather than creating a second spec for the same area (which would cause a conflict).
+
+What specifically do you want to change? You can describe it freely, or I can show
+you what the spec currently says section by section.
+```
+
+**If routing to NEW:**
+
+```
+I checked existing specs and nothing covers this area yet.
+
+I'll author a new spec from scratch. Let's start with what you want to build.
+```
+
+**If ambiguous:**
+
+```
+I found [N] existing specs that partially overlap with what you described:
+
+  LS-YYYY-NNN — [domain] — overlaps on: [files or domain area]
+  LS-YYYY-MMM — [domain] — overlaps on: [files or domain area]
+
+Options:
+  A) Edit one of the existing specs to include the new behaviour
+  B) Create a new spec with a tighter scope that doesn't overlap
+  C) Split the change across both existing specs
+
+Which fits what you have in mind?
+```
+
+**Gate: confirm the routing decision before proceeding.**
+
+---
+
+## EDIT MODE (entered when routing decision = EDIT)
+
+Load the target spec file. Read every section. Present a plain-language summary:
+
+```
+Here is what LS-YYYY-NNN currently says:
+
+  What it does:         [plain-language summary of INTENT_HAPPY_PATH]
+  What can go wrong:    [plain-language summary of EDGE_CRITICAL_UNHAPPY_PATH]
+  What must not break:  [plain-language summary of REGRESSION_FENCE]
+  Key decisions:        [plain-language summary of CONTEXT_DEBT_NOTE]
+
+Tell me what you want to change.
+```
+
+Once the user describes the changes, identify which sections are affected and run only the phases for those sections:
+
+| Section to change | Phases to run |
+|---|---|
+| What the feature does (add/remove/reorder steps) | Phase 3, then Phase 4 to re-derive edges for changed steps |
+| What can go wrong | Phase 4 only |
+| What must not break | Phase 5 only |
+| What files the change touches | Phase 2 only |
+| The reasoning behind decisions | Phase 7 only |
+| Multiple sections | Corresponding phases in order |
+
+After confirming all changed sections, run Phase 8 (adversarial self-check) against the **full updated spec** — a change in one section can invalidate another.
+
+**Version bump before writing:**
+- Patch (0.0.x): wording clarification only, no behaviour change
+- Minor (0.x.0): steps added or removed, edge cases updated, regression items changed
+- Major (x.0.0): happy path restructured, authorized files changed, or domain redefined
+
+Update `validated_against` to today's date. Then proceed to Phase 9 and Phase 10 as normal.
 
 ---
 
 ## PHASE 1: INTENT CAPTURE
 
-Ask the user one open question:
-
-> "What do you want to build? Describe it in plain language — no structure needed yet."
-
-Wait for the response. Do not prompt for domain, files, or steps.
+*(Reached only when routing decision = NEW. The description was already captured in Phase 0 — do not ask again.)*
 
 ### Interpret the description
 
@@ -67,15 +164,15 @@ Wait for the response. Do not prompt for domain, files, or steps.
 | Likely authorized paths | Map the domain to the project's `AUTHORIZED` paths |
 | Security sensitivity | Flag if domain involves auth, payments, credentials, PII, or billing |
 
-Present your interpretation:
+Present your interpretation in plain language (see Human-first language rule in Conversation principles):
 
 ```
 I read this as:
 
-  Domain:      auth/password-reset
-  Runtime:     TypeScript 5.4 / Next.js 15
-  Data stores: Postgres (read-write), Email service (write-only)
-  Sensitivity: HIGH — auth flow, token handling
+  What it does:         [plain-language description of the feature]
+  Where it runs:        [plain-language runtime description]
+  What it reads/writes: [plain-language list of services and data]
+  Sensitivity:          [HIGH / STANDARD — reason]
 
 Does this match what you have in mind? Correct anything before we go section by section.
 ```
@@ -162,6 +259,35 @@ Reject immediately with a specific rewrite offer:
 
 **Gate: every step must be free of banned phrases before proceeding.**
 
+### Jargon substitution rule — technical terms
+
+When proposing, reviewing, or rewriting steps with the user, replace developer terms with
+plain business English. Apply this to every step you write or receive from the user:
+
+| Avoid | Use instead |
+|-------|------------|
+| upsert | update if it exists, create it if it doesn't |
+| null / undefined | empty / not provided |
+| boolean / true / false flag | yes/no setting |
+| payload | submitted data / form answers |
+| return 400 / return 4xx | the system tells the customer what went wrong and does not proceed |
+| return 500 / return 5xx | the system signals a failure |
+| row / record (database context) | saved entry |
+| schema validation | checking that all required fields are filled in correctly |
+| idempotency / idempotency check | duplicate-prevention check |
+| throws / exception | fails unexpectedly |
+| endpoint | the address the request is sent to |
+| non-2xx | an error response from the service |
+| exit 0 | passes / succeeds |
+| pre-hydration | before the page finishes loading |
+| layout shift | the page jumping or repositioning |
+| database write / write to DB | saving to the database |
+| log / log a warning | record the error internally |
+
+If a step contains any term in the left column, offer the substitution before accepting:
+*"'[term]' is developer language — a business analyst reading this would need a developer to
+translate it. I'd rewrite it as: '[plain version]'. Want me to apply that?"*
+
 ---
 
 ## PHASE 4: EDGE_CRITICAL_UNHAPPY_PATH
@@ -173,29 +299,29 @@ Label each edge with the step it mirrors so the mapping is traceable.
 
 | Happy path step contains | Derive this edge case |
 |--------------------------|----------------------|
-| User submits / enters / provides X | X is missing, invalid, or malformed — return field-level error, do not proceed |
-| System validates X | X validation fails — return the specific reason, do not proceed |
-| System calls / requests external API | Service is unavailable or returns non-2xx — return graceful error, do not partially complete |
-| System sends email / notification | Delivery service unavailable — return explicit error, do not silently drop or report success |
-| System stores / writes / creates / saves | Write fails — return 500, do not leave the system in a partial state |
-| System generates / stores token | Token is expired or already used — reject with specific message, prompt re-initiation |
-| Payment / Stripe / checkout | Provider returns decline — show user-facing error, do not create order or subscription record |
-| System redirects | Redirect target requires auth the user lacks — fall back to safe default, do not expose destination |
+| Customer submits / enters / provides X | X is missing, invalid, or incorrectly formatted — the system highlights each problem field and tells the customer what to correct; nothing is saved or sent |
+| System validates / checks X | X is not valid — the system tells the customer the specific reason and does not continue |
+| System calls / requests external service | The service is unavailable or returns an error — the system signals failure without completing any part of the action; nothing is saved or sent |
+| System sends email / notification | The delivery service is unavailable — the system signals failure explicitly; it does not silently drop the message or report success |
+| System saves / stores / creates / writes | The save fails — the system signals failure and leaves nothing partially saved; the customer is asked to try again |
+| System generates / stores a link or code | The link or code is expired or already used — the system tells the customer it is no longer valid and directs them to start again |
+| Payment / checkout | The payment provider declines — the customer sees a clear error message; no order or subscription is created |
+| System redirects | The destination requires access the customer does not have — the system redirects to a safe fallback and does not reveal the intended destination |
 
-If two steps trigger the same rule (e.g. two database writes), derive distinct edges that
-reference each step's specific data — do not collapse them into one generic "write fails" entry.
+If two steps trigger the same rule (e.g. two saves), derive distinct edges that reference each
+step's specific data — do not collapse them into one generic entry.
 
 ```
 EDGE_CRITICAL_UNHAPPY_PATH — derived from your happy path:
 
-  1. (from step 1) Email field is empty or malformed — return 400 with a field-level error,
-     do not attempt token generation.
-  2. (from step 2) Database write for the reset token fails — return 500, do not send the
-     email, do not leave a partial token record.
-  3. (from step 3) Email service is unavailable — return an explicit error to the caller,
-     do not mark the reset as initiated or report success.
-  4. (from step 5) Token is expired or already used — return a specific error message and
-     redirect the user to /forgot-password to re-initiate.
+  1. (from step 1) Email address field is empty or not a valid email — the system highlights
+     the field and tells the customer to correct it; no reset link is generated.
+  2. (from step 2) Saving the reset link fails — the system signals failure and does not
+     send the email; the customer is asked to try again.
+  3. (from step 3) Email delivery service is unavailable — the system signals failure
+     explicitly; the reset is not marked as sent and no success message is shown.
+  4. (from step 5) Reset link is expired or has already been used — the system tells the
+     customer the link is no longer valid and directs them back to the request page.
 
 Minimum required: ceil(5 / 2) = 3. You have 4 — above minimum.
 ```
@@ -208,15 +334,15 @@ Minimum required: ceil(5 / 2) = 3. You have 4 — above minimum.
 
 Propose what must not break. Draw from:
 - Specs in `forge_spec_list` results that share the same domain
-- Endpoints or services mentioned in the happy path
+- Features or services mentioned in the happy path
 - `VERIFY_COMMAND` from config
 
 ```
 REGRESSION_FENCE — what must not break:
 
-  - Existing authenticated sessions must remain valid after this change.
-  - The /api/auth/logout endpoint must continue to clear cookies correctly.
-  - <VERIFY_COMMAND> must continue to exit 0.
+  - Customers who are already signed in must remain signed in after this change.
+  - Signing out must continue to work correctly.
+  - All automated tests must continue to pass.
 ```
 
 Ask: "Anything else that must be preserved?"
@@ -292,14 +418,17 @@ Read the entire spec as if you are the AI coding agent about to implement it. An
       in the spec? If any step requires a judgment call, it is under-specified — name it.
 
   [ ] Does every edge case give me both the exact trigger condition AND the exact system
-      response? "Handle gracefully" is not a response. A status code, a redirect, a log
-      entry — these are. Flag any edge case that leaves the response unspecified.
+      response? "Handle gracefully" is not a response. What the customer sees or receives,
+      and what the system saves, sends, or skips — these are. Flag any edge case that
+      leaves the response unspecified.
 
   [ ] Are authorization boundaries as tight as they can be? "src/" is not tighter than
       "src/auth/reset/". If a broader path is listed, confirm it is intentional.
 
-  [ ] Is every REGRESSION_FENCE item something I can verify? "Nothing should break" is not
-      verifiable. "forge test must exit 0" is. Rewrite any item that is not verifiable.
+  [ ] Is every REGRESSION_FENCE item verifiable by walking through a real user scenario
+      or checking whether the product still behaves correctly? "Nothing should break" is
+      not verifiable. "Customers who completed checkout before this change must still
+      receive their documents" is. Rewrite any item that is not verifiable in plain terms.
 
   [ ] Would I need to read any file outside authorized_files to understand the full feature?
       If yes, that file should be listed as authorized (read-only) or the step is missing context.
@@ -411,15 +540,31 @@ specific failures they want covered.
 **The spec is for the agent, not the user.** Every step must be executable without a follow-up
 question. If you would need to ask, the step is not specific enough.
 
+**Human-first language during the session.** The `.logic` file format uses uppercase section
+names and technical field labels because they are parsed by the linter. The *conversation*
+must use plain business English. Translate section names whenever you introduce a phase:
+
+| Section name | Say to the user |
+|---|---|
+| TARGET_BOUNDARIES | "What this feature is allowed to touch — and what it must never change" |
+| INTENT_HAPPY_PATH | "The main success flow, step by step — what happens when everything works" |
+| EDGE_CRITICAL_UNHAPPY_PATH | "What can go wrong and exactly how the system responds each time" |
+| REGRESSION_FENCE | "What must not break — existing behaviour this change must preserve" |
+| CONTEXT_DEBT_NOTE | "Why we made these decisions — context a future developer would need" |
+
+Never present a section header to the user without first naming what it is in plain English.
+When showing your Phase 1 interpretation, present it as labelled descriptions, not raw field
+names (`data_stores`, `runtime`).
+
 ---
 
 ## Ingestion template
 
 ```
-Read .lsd/skills/forge-new.md and .lsd/config.json. I want to author a new .logic spec.
+Read .lsd/skills/forge-new.md and .lsd/config.json. I want to spec out a change or new feature.
 
 DESCRIPTION
-<describe what you want to build in plain language>
+<describe what you want to build or change in plain language>
 
-Execute Phase 1 now.
+Execute Phase 0 now.
 ```

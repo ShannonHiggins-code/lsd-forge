@@ -65,13 +65,18 @@ forbidden_files:
 The primary success flow. Numbered list. Each step must be a specific, observable action —
 not a vague description.
 
+**Language rule:** Write steps in plain business English. Name who does what and what the
+visible result is. Do not use HTTP status codes, function names, field names, or database
+terms in step text. "The system saves the customer's account" is correct. "System inserts
+the user row and returns 201" is not.
+
 ```
 ## 2. INTENT_HAPPY_PATH
 
-1. User submits login form with valid email and password.
-2. System checks credentials against the users table.
-3. System creates a session record and sets a signed HTTP-only cookie.
-4. System redirects the user to /dashboard.
+1. The customer submits the sign-in form with their email address and password.
+2. The system checks that the credentials are correct.
+3. The system marks the customer as signed in and keeps them signed in across page visits.
+4. The system takes the customer to their dashboard.
 ```
 
 **Step count matters.** The edge section must have at least `ceil(happy_steps / 2)` steps.
@@ -84,9 +89,13 @@ Failure cases. Each entry: `<specific trigger> → <specific system response>`.
 ```
 ## 3. EDGE_CRITICAL_UNHAPPY_PATH
 
-1. User submits an email not found in the users table → return 401, do not reveal which field failed.
-2. User submits correct email but wrong password → return 401, increment failed_attempts counter.
-3. User account is locked (failed_attempts ≥ 5) → return 423 with unlock instructions.
+1. The customer submits an email address that does not match any account → the system shows
+   a generic "email or password is incorrect" message (does not reveal which field failed)
+   and does not sign them in.
+2. The customer submits the correct email but the wrong password → the system shows the same
+   generic error and records the failed attempt internally.
+3. The customer's account has been locked after too many failed attempts → the system tells
+   the customer their account is locked and explains how to unlock it; sign-in is not permitted.
 ```
 
 ### 4. REGRESSION_FENCE
@@ -129,7 +138,7 @@ blocks compilation:
 > in some cases · etc. · and so on · various · somehow
 
 **Replace with:** a specific observable outcome. Instead of "handle the error", write
-"return 422 with the field name and constraint violated".
+"the system tells the customer which field is wrong and does not save anything".
 
 ---
 
@@ -165,7 +174,7 @@ A spec is complete when `forge lint --strict` exits 0.
 | Mistake | Fix |
 |---------|-----|
 | Lowercase section heading (`## intent_happy_path`) | Use uppercase: `## INTENT_HAPPY_PATH` |
-| Vague step ("System handles the request") | Specific: "System validates the JWT signature and returns 401 if invalid" |
+| Vague step ("System handles the request") | Specific: "The system checks that the request is genuine; if it is not, the customer is turned away with an explanation." |
 | Too few edge cases (2 happy, 0 edge) | Add at least `ceil(2/2) = 1` edge case |
 | `authorized_files` contains a `forbidden` path | Remove the conflict — one list only |
 | `validated_against` set to a future date | Set to today's date |

@@ -37,87 +37,87 @@ const STORE_HINTS = [
 
 const HAPPY_PATH_TEMPLATES = {
   'auth/password-reset': [
-    'User navigates to /forgot-password and submits their email address.',
-    'System validates the email, generates a signed one-time reset token, and stores it with a 15-minute expiry.',
-    'System sends a password reset email containing the token link via the email service.',
-    'User clicks the link and is directed to the reset form with the token pre-filled.',
-    'User submits a new password; system validates the token, updates credentials, and invalidates the token.',
+    'The customer navigates to the forgot-password page and submits their email address.',
+    'The system checks the email address exists, creates a time-limited reset link (valid for 15 minutes), and saves it.',
+    'The system sends a password reset email containing the link via the email service.',
+    'The customer clicks the link and is taken to the reset form.',
+    'The customer submits a new password; the system checks the link is still valid, updates the password, and marks the link as used.',
   ],
   'auth/registration': [
-    'User navigates to /register and submits their name, email, and password.',
-    'System validates uniqueness of the email and strength of the password.',
-    'System creates the user record and sends a verification email.',
-    'User clicks the verification link; system marks the account as verified.',
-    'System redirects the user to the onboarding flow.',
+    'The customer navigates to the registration page and submits their name, email address, and password.',
+    'The system checks that the email address is not already in use and the password meets the minimum requirements.',
+    'The system saves the new account and sends a verification email.',
+    'The customer clicks the verification link; the system marks the account as verified.',
+    'The system takes the customer to the onboarding flow.',
   ],
   'auth/session': [
-    'User navigates to /login and submits credentials.',
-    'System validates credentials against the auth provider.',
-    'System creates a session token and sets the auth cookie.',
-    'System redirects the user to the protected destination.',
+    'The customer navigates to the sign-in page and submits their credentials.',
+    'The system checks the credentials are correct.',
+    'The system marks the customer as signed in and keeps them signed in across page visits.',
+    'The system takes the customer to their intended destination.',
   ],
   'payments/checkout': [
-    'User reviews their cart and clicks Proceed to Checkout.',
-    'System renders the payment form with Stripe Elements.',
-    'User enters card details and submits the form.',
-    'System creates a PaymentIntent via the Stripe API.',
-    'On success, system records the order and redirects to the confirmation page.',
+    'The customer reviews their order and proceeds to checkout.',
+    'The system shows the customer the payment form.',
+    'The customer enters their card details and submits the form.',
+    'The system processes the payment through the payment provider.',
+    'On success, the system saves the order and takes the customer to the confirmation page.',
   ],
   'payments/billing': [
-    'User navigates to /billing and selects a subscription plan.',
-    'System creates a Stripe Checkout session and redirects the user.',
-    'User completes payment; Stripe fires a checkout.session.completed webhook.',
-    'System activates the subscription and updates the user record.',
-    'System sends a confirmation email with the invoice.',
+    'The customer navigates to the billing page and selects a subscription plan.',
+    'The system redirects the customer to the payment provider to complete payment.',
+    'The customer completes payment; the payment provider confirms and notifies the system.',
+    'The system activates the subscription and updates the customer record.',
+    'The system sends a confirmation email with the invoice.',
   ],
   'webhooks/inbound': [
-    'External service sends a POST request to the webhook endpoint.',
-    'System validates the request signature against the shared secret.',
-    'System parses the event payload and identifies the event type.',
-    'System dispatches the event to the appropriate handler.',
-    'Handler completes processing and returns 200 to acknowledge delivery.',
+    'An external service sends an event notification to the webhook address.',
+    'The system confirms the notification genuinely came from the expected service by verifying the shared secret.',
+    'The system reads the incoming event and determines what type it is.',
+    'The system routes the event to the correct processing step.',
+    'The system completes processing and confirms receipt to the sending service.',
   ],
   'notifications/email': [
-    'Triggering event occurs (user action or system event).',
-    'System constructs the email payload from the event data.',
-    'System calls the email service API with the recipient and template.',
-    'Email service queues and delivers the message.',
-    'System records the delivery attempt in the database.',
+    'A triggering event occurs (customer action or internal system event).',
+    'The system builds the email content from the event information.',
+    'The system sends the email through the email service to the intended recipient.',
+    'The email service queues and delivers the message.',
+    'The system records that the email was sent.',
   ],
   'documents/generation': [
-    'User submits the form with the required data fields.',
-    'System validates all required fields are present and correctly formatted.',
-    'System passes the data to the PDF generator with the correct template.',
-    'Generator produces the document and stores it in object storage.',
-    'System returns a signed URL for the user to download the document.',
+    'The customer submits the form with all required information.',
+    'The system checks that all required fields are present and correctly formatted.',
+    'The system generates the document using the correct template.',
+    'The system saves the finished document.',
+    'The system gives the customer a secure download link for the document.',
   ],
   'marketing/page': [
-    'Visitor navigates to the page URL.',
-    'System serves the statically rendered page from the CDN.',
-    'Visitor reads the hero and value proposition.',
-    'Visitor interacts with a CTA (copy command, sign up, learn more).',
-    'System records the interaction for analytics.',
+    'The visitor navigates to the page.',
+    'The system serves the pre-built page.',
+    'The visitor reads the main content and value proposition.',
+    'The visitor interacts with a call to action (copy a command, sign up, learn more).',
+    'The system records the interaction for analytics.',
   ],
   'user/profile': [
-    'User navigates to /profile/settings and views their current data.',
-    'User edits one or more fields and submits the form.',
-    'System validates the updated fields.',
-    'System writes the changes to the database.',
-    'System returns the updated profile and shows a success message.',
+    'The customer navigates to their profile settings and views their current information.',
+    'The customer edits one or more fields and submits the form.',
+    'The system checks the updated fields are correctly formatted.',
+    'The system saves the updated information.',
+    'The system shows the customer their updated profile with a confirmation message.',
   ],
 };
 
 // ── Regression fence templates ────────────────────────────────────────────────
 
 const FENCE_TEMPLATES = {
-  auth:        ['Existing authenticated sessions must remain valid after this change.',
-                'The /api/auth/logout endpoint must continue to clear cookies correctly.'],
+  auth:        ['Customers who are already signed in must remain signed in after this change.',
+                'Signing out must continue to work correctly.'],
   payments:    ['Existing subscription records must not be affected by this change.',
-                'The Stripe webhook endpoint must continue to receive and acknowledge events.'],
-  webhooks:    ['All existing event handlers must continue to process their event types correctly.'],
-  documents:   ['Previously generated documents must remain accessible via their stored URLs.'],
-  default:     ['All existing routes must continue to resolve correctly.',
-                'No existing database schema must be altered without a migration.'],
+                'Payment confirmations from the payment provider must continue to be processed correctly.'],
+  webhooks:    ['All existing event types must continue to be processed correctly by their current handlers.'],
+  documents:   ['Previously generated documents must remain accessible to customers via their download links.'],
+  default:     ['All existing pages and features must continue to work correctly.',
+                'No existing saved data must be changed or deleted by this change.'],
 };
 
 // ── Step transformers — derive edges from happy path ─────────────────────────
@@ -131,60 +131,60 @@ const STEP_TRANSFORMERS = [
     test: /\buser\b.+\b(submits?|enters?|provides?|uploads?|fills?|types?)\b/i,
     derive: (step) => {
       const m = step.match(/\b(?:submits?|enters?|provides?|uploads?)\s+(?:a |an |their |the )?(.+?)(?=\s+(?:via|to|and|;|,|\.)|[;,.]|$)/i);
-      const what = m ? m[1].replace(/\.$/, '').trim() : 'submitted data';
-      return `${cap(what)} is missing, invalid, or malformed — return field-level validation errors, do not proceed.`;
+      const what = m ? m[1].replace(/\.$/, '').trim() : 'submitted information';
+      return `${cap(what)} is missing, invalid, or incorrectly formatted — the system highlights each problem field and tells the customer what to correct; nothing is saved or sent.`;
     },
   },
   {
     id: 'token-session',
     test: /\b(token|session|otp|one.time|magic.link)\b/i,
-    derive: () => 'Token or session is expired or has already been used — reject with a specific error message and prompt the user to re-initiate the flow.',
+    derive: () => 'The link or code is expired or has already been used — the system tells the customer it is no longer valid and directs them to start the process again.',
   },
   {
     id: 'email-send',
     test: /\b(sends?|delivers?|dispatches?)\b.+\b(email|notification|message)\b/i,
-    derive: () => 'Email or notification service is unavailable — return an explicit error, do not silently drop the message or mark the operation as complete.',
+    derive: () => 'The email or notification service is unavailable — the system signals failure explicitly and does not mark the action as complete; the customer is not told it succeeded.',
   },
   {
     id: 'payment',
     test: /\b(stripe|paymentintent|checkout|charge|payment)\b/i,
-    derive: () => 'Payment provider returns a decline or error code — display a user-facing error message, do not create an order or subscription record.',
+    derive: () => 'The payment provider declines the payment — the customer sees a clear error message; no order or subscription is created.',
   },
   {
     id: 'external-api',
     test: /\b(calls?|requests?|invokes?|queries?)\b.+\b(api|service|endpoint|provider)\b/i,
-    derive: () => 'External service is unavailable or returns a non-2xx response — return a graceful error to the caller, do not partially complete the operation.',
+    derive: () => 'The external service is unavailable or returns an error — the system signals failure without completing any part of the action; nothing is saved or sent.',
   },
   {
     id: 'db-write',
     test: /\b(stores?|writes?|creates?|saves?|persists?|records?|inserts?|updates?)\b/i,
-    derive: () => 'Database write fails or times out — return a 500 error, do not leave the system in a partial or inconsistent state.',
+    derive: () => 'The save fails or times out — the system signals failure and leaves nothing partially saved; the customer is asked to try again.',
   },
   {
     id: 'storage-write',
     test: /\b(uploads?|stores?\s+in|writes?\s+to)\b.+\b(storage|s3|r2|blob|object)\b/i,
-    derive: () => 'Storage write fails or quota is exceeded — return a 503, do not return a broken or partial URL to the caller.',
+    derive: () => 'Saving the file fails or storage is full — the system signals failure and does not return a broken link; the customer is informed the file was not saved.',
   },
   {
     id: 'redirect',
     test: /\bredirects?\b/i,
-    derive: () => 'Redirect target requires authorization the user does not have — fall back to a safe default route, do not expose the original destination.',
+    derive: () => 'The destination requires access the customer does not have — the system redirects to a safe fallback page and does not reveal the intended destination.',
   },
   {
     id: 'validation',
     test: /\bvalidates?\b/i,
     derive: (step) => {
       const m = step.match(/validates?\s+(?:the\s+|a\s+)?(.+?)(?=\s+(?:and|against|;|,)|[;,.]|$)/i);
-      const what = m ? m[1].replace(/\.$/, '').trim() : 'the input';
-      return `${cap(what)} validation fails — return a specific failure reason, do not proceed to the next step.`;
+      const what = m ? m[1].replace(/\.$/, '').trim() : 'the information provided';
+      return `${cap(what)} is not valid — the system tells the customer the specific reason and does not continue to the next step.`;
     },
   },
 ];
 
 const EDGE_FALLBACKS = [
-  'Concurrent duplicate request is received — process idempotently, do not create duplicate records.',
-  'Request arrives with a missing or malformed auth header — return 401, do not process the payload.',
-  'Downstream dependency exceeds response timeout — return 503, log the timeout, surface to monitoring.',
+  'A duplicate request is received while the first is still being processed — the system handles it once and does not create duplicate records.',
+  'A request arrives without valid authentication — the system turns it away without processing any part of the request.',
+  'A downstream service takes too long to respond — the system signals a timeout to the caller and records the failure internally.',
 ];
 
 function cap(s) {
@@ -227,31 +227,31 @@ const COVERAGE_CHECKS = [
     keyword: /\bemail\b/i,
     edgeWord: 'email',
     label:    'email delivery failure',
-    suggest:  'Email or notification service is unavailable — return an explicit error, do not silently drop.',
+    suggest:  'The email or notification service is unavailable — the system signals failure explicitly and does not mark the action as complete.',
   },
   {
     keyword: /\bstripe\b|\bpayment\b/i,
     edgeWord: 'payment',
     label:    'payment failure',
-    suggest:  'Payment provider returns a decline — display a user-facing error, do not create an order record.',
+    suggest:  'The payment provider declines the payment — the customer sees a clear error message; no order or subscription is created.',
   },
   {
     keyword: /\bdatabase\b|\bdb\b|\bpostgres\b|\bdrizzle\b/i,
     edgeWord: 'database',
     label:    'database write failure',
-    suggest:  'Database write fails — return a 500 error, do not leave the system in a partial state.',
+    suggest:  'The save fails — the system signals failure and leaves nothing partially saved; the customer is asked to try again.',
   },
   {
     keyword: /\bstorage\b|\bs3\b|\br2\b|\bblob\b/i,
     edgeWord: 'storage',
     label:    'storage write failure',
-    suggest:  'Storage write fails — return a 503, do not return a broken URL to the caller.',
+    suggest:  'Saving the file fails — the system signals failure and does not return a broken link; the customer is informed the file was not saved.',
   },
   {
     keyword: /\btoken\b|\bsession\b/i,
     edgeWord: 'expir',
     label:    'token or session expiry',
-    suggest:  'Token or session is expired or already used — reject with a clear message, prompt re-initiation.',
+    suggest:  'The link or code is expired or already used — the system tells the customer it is no longer valid and directs them to start the process again.',
   },
 ];
 
@@ -271,7 +271,7 @@ function runAdversarialCheck(answers) {
       findings.push({
         severity: 'critical',
         message:  `Ambiguous phrase "${phrase}" in ${section} will fail lint`,
-        suggestion: `Replace with a specific, observable outcome — e.g. "return HTTP 503 and log to telemetry".`,
+        suggestion: `Replace with a specific, observable outcome — e.g. "the system signals failure and tells the customer to try again".`,
         apply: null,
       });
     }
@@ -411,10 +411,10 @@ function interpret(description, config) {
 function generateGenericSteps(description) {
   const verb = description.split(' ').slice(2, 5).join(' ');
   return [
-    `User initiates the ${verb} flow.`,
-    'System validates the request and checks authorisation.',
-    'System processes the operation and persists the result.',
-    'System returns a success response to the user.',
+    `The customer initiates the ${verb} flow.`,
+    'The system checks that all required information is present and correct.',
+    'The system completes the operation and saves the result.',
+    'The system confirms success and shows the customer what happened.',
   ];
 }
 

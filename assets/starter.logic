@@ -20,20 +20,20 @@ forbidden_files:
 
 ## 2. INTENT_HAPPY_PATH
 
-1. User submits a valid request payload to the endpoint.
-2. System validates the request against the defined schema.
-3. System writes the record to the database with a generated ID.
-4. System returns a 201 response with the created resource ID.
+1. The customer submits the completed form with all required information filled in.
+2. The system checks that all required fields are present and correctly formatted.
+3. The system saves the new entry and assigns it a unique reference number.
+4. The system confirms the submission was accepted and shows the customer their reference number.
 
 ## 3. EDGE_CRITICAL_UNHAPPY_PATH
 
-1. User submits a payload that fails schema validation → return 400 with field-level error details identifying each invalid field.
-2. Database write fails due to a unique constraint violation → return 409 with the name of the conflicting field.
+1. The customer submits the form with a required field missing or incorrectly formatted → the system highlights each problem field, tells the customer what to correct, and does not save anything.
+2. The customer submits an entry that duplicates an existing record → the system tells the customer which field is conflicting and does not save the duplicate.
 
 ## 4. REGRESSION_FENCE
 
-- Existing records in the database must not be modified by this change.
-- All existing API endpoints must continue to respond with their current status codes.
+- Existing customer entries must not be changed or deleted by this change.
+- All existing product features must continue to work correctly.
 
 ## 5. CONTEXT_DEBT_NOTE
 
