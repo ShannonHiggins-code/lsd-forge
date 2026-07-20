@@ -532,13 +532,13 @@ module.exports = {
 
 ## Author
 
-**Shannon Higgins** — Nagashi Limited, Carson City, NV
+**Shannon Higgins** — Nagashi LLC, Carson City, NV
 
 Documentation and guides: [authori.us/lsd-forge](https://authori.us/lsd-forge)
 
 Questions, adoption guidance, or collaboration: [shannonhiggins@outlook.com](mailto:shannonhiggins@outlook.com)
 
-Built at [Nagashi Limited](https://authori.us) — the holding company behind the Authori product suite.
+Built at [Nagashi LLC](https://authori.us) — the operating company behind the Authori product suite.
 
 ---
 
