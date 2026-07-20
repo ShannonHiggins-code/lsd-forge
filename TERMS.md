@@ -2,7 +2,7 @@
 
 **Effective date:** June 10, 2026
 **Last updated:** June 10, 2026
-**Published by:** Nagashi Limited, Carson City, Nevada, United States
+**Published by:** Nagashi LLC, Carson City, Nevada, United States
 
 ---
 
@@ -24,7 +24,7 @@ LSD FORGE is a software development toolchain that provides:
 - Skill files and authoring protocols for AI-assisted spec development
 - Integration utilities for connecting with third-party AI coding assistants
 
-The Software is distributed as an open-source npm package under the MIT License. No account registration is required. No data is transmitted to Nagashi Limited or any Nagashi-operated server during normal use. The version-update check transmits only a read request to the public npm registry (`registry.npmjs.org`) to retrieve the latest published package version.
+The Software is distributed as an open-source npm package under the MIT License. No account registration is required. No data is transmitted to Nagashi LLC or any Nagashi-operated server during normal use. The version-update check transmits only a read request to the public npm registry (`registry.npmjs.org`) to retrieve the latest published package version.
 
 ---
 
@@ -59,15 +59,15 @@ The Software facilitates the creation of specification files that are compiled i
 
 ### 4.1 Software Ownership
 
-LSD FORGE, including its source code, compiled binaries, documentation, skill files, and associated assets, is owned by Shannon Higgins and Nagashi Limited and is made available under the MIT License. Nothing in these Terms transfers ownership of the Software or any component thereof to you.
+LSD FORGE, including its source code, compiled binaries, documentation, skill files, and associated assets, is owned by Shannon Higgins and Nagashi LLC and is made available under the MIT License. Nothing in these Terms transfers ownership of the Software or any component thereof to you.
 
 ### 4.2 Your Content
 
-You retain all intellectual property rights in the `.logic` specification files, registry data, and other content you create using the Software ("Your Content"). By using the Software, you grant Nagashi Limited no rights in Your Content. Nagashi Limited does not access, store, or transmit Your Content.
+You retain all intellectual property rights in the `.logic` specification files, registry data, and other content you create using the Software ("Your Content"). By using the Software, you grant Nagashi LLC no rights in Your Content. Nagashi LLC does not access, store, or transmit Your Content.
 
 ### 4.3 Feedback
 
-If you provide feedback, suggestions, or ideas regarding the Software ("Feedback"), you grant Nagashi Limited a perpetual, irrevocable, royalty-free, worldwide licence to use, incorporate, and commercialise that Feedback in any product or service without obligation to you.
+If you provide feedback, suggestions, or ideas regarding the Software ("Feedback"), you grant Nagashi LLC a perpetual, irrevocable, royalty-free, worldwide licence to use, incorporate, and commercialise that Feedback in any product or service without obligation to you.
 
 ---
 
@@ -75,19 +75,19 @@ If you provide feedback, suggestions, or ideas regarding the Software ("Feedback
 
 ### 5.1 AI Model Providers
 
-The Software is designed to integrate with third-party AI models and platforms, including but not limited to Anthropic Claude, OpenAI models, GitHub Copilot, and others (collectively, "AI Providers"). Your use of any AI Provider is governed solely by that provider's terms of service, privacy policy, and acceptable use policy. Nagashi Limited is not a party to your agreements with AI Providers and bears no responsibility for the behaviour, output, accuracy, or availability of any AI Provider.
+The Software is designed to integrate with third-party AI models and platforms, including but not limited to Anthropic Claude, OpenAI models, GitHub Copilot, and others (collectively, "AI Providers"). Your use of any AI Provider is governed solely by that provider's terms of service, privacy policy, and acceptable use policy. Nagashi LLC is not a party to your agreements with AI Providers and bears no responsibility for the behaviour, output, accuracy, or availability of any AI Provider.
 
 ### 5.2 npm Registry
 
-The Software retrieves version information from the public npm registry operated by npm, Inc. Your use of the npm registry is subject to npm's terms of service. Nagashi Limited does not operate or control the npm registry.
+The Software retrieves version information from the public npm registry operated by npm, Inc. Your use of the npm registry is subject to npm's terms of service. Nagashi LLC does not operate or control the npm registry.
 
 ### 5.3 Version Control and Deployment Platforms
 
-The Software installs pre-commit hooks into your project's git repository and modifies project configuration files. You are responsible for reviewing all modifications made to your project by the Software before committing or deploying them. Nagashi Limited bears no responsibility for any unintended consequences arising from Software-installed hooks, configuration changes, or file modifications in your project.
+The Software installs pre-commit hooks into your project's git repository and modifies project configuration files. You are responsible for reviewing all modifications made to your project by the Software before committing or deploying them. Nagashi LLC bears no responsibility for any unintended consequences arising from Software-installed hooks, configuration changes, or file modifications in your project.
 
 ### 5.4 No Endorsement
 
-Reference to any third-party tool, platform, or service in the Software or its documentation does not constitute an endorsement by Nagashi Limited.
+Reference to any third-party tool, platform, or service in the Software or its documentation does not constitute an endorsement by Nagashi LLC.
 
 ---
 
@@ -97,7 +97,7 @@ The Software assists in authoring specification files through AI-guided conversa
 
 - Specification files generated with AI assistance may contain errors, omissions, ambiguities, security vulnerabilities, or legally non-compliant content regardless of whether they pass the Software's automated lint checks
 - Passing `forge lint` confirms structural compliance with the Software's rules only; it does not constitute a guarantee that the specification is accurate, complete, legally sound, or fit for any particular purpose
-- The RSC-AR adversarial hardening process depends on the quality and capability of the AI model executing it; Nagashi Limited makes no warranty as to the thoroughness or correctness of AI-conducted adversarial reviews
+- The RSC-AR adversarial hardening process depends on the quality and capability of the AI model executing it; Nagashi LLC makes no warranty as to the thoroughness or correctness of AI-conducted adversarial reviews
 - Compiled payloads produced by the Software are intended as operational briefs for AI agents; the consequences of any code or other output produced by AI agents operating from such payloads are entirely your responsibility
 - You must independently validate all AI-generated or AI-assisted output before relying on it for any production, safety-critical, compliance-sensitive, or otherwise consequential purpose
 
@@ -107,7 +107,7 @@ The Software assists in authoring specification files through AI-guided conversa
 
 THE SOFTWARE IS PROVIDED "AS IS" AND "AS AVAILABLE," WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, TITLE, NON-INFRINGEMENT, AND ACCURACY.
 
-NAGASHI LIMITED DOES NOT WARRANT THAT:
+NAGASHI LLC DOES NOT WARRANT THAT:
 
 - THE SOFTWARE WILL MEET YOUR REQUIREMENTS OR EXPECTATIONS
 - THE SOFTWARE WILL OPERATE WITHOUT INTERRUPTION OR BE ERROR-FREE
@@ -122,7 +122,7 @@ SOME JURISDICTIONS DO NOT ALLOW THE EXCLUSION OF IMPLIED WARRANTIES. TO THE EXTE
 
 ## 8. Limitation of Liability
 
-TO THE MAXIMUM EXTENT PERMITTED BY APPLICABLE LAW, IN NO EVENT SHALL NAGASHI LIMITED, SHANNON HIGGINS, OR ANY OF THEIR AFFILIATES, OFFICERS, EMPLOYEES, AGENTS, LICENSORS, OR SERVICE PROVIDERS BE LIABLE FOR:
+TO THE MAXIMUM EXTENT PERMITTED BY APPLICABLE LAW, IN NO EVENT SHALL NAGASHI LLC, SHANNON HIGGINS, OR ANY OF THEIR AFFILIATES, OFFICERS, EMPLOYEES, AGENTS, LICENSORS, OR SERVICE PROVIDERS BE LIABLE FOR:
 
 - ANY INDIRECT, INCIDENTAL, SPECIAL, CONSEQUENTIAL, EXEMPLARY, OR PUNITIVE DAMAGES
 - LOSS OF PROFITS, REVENUE, DATA, GOODWILL, BUSINESS OPPORTUNITIES, OR ANTICIPATED SAVINGS
@@ -131,17 +131,17 @@ TO THE MAXIMUM EXTENT PERMITTED BY APPLICABLE LAW, IN NO EVENT SHALL NAGASHI LIM
 - ANY DAMAGES ARISING FROM ACTIONS TAKEN BY AI AGENTS OPERATING FROM COMPILED PAYLOADS GENERATED BY THE SOFTWARE
 - ANY UNAUTHORISED ACCESS TO OR ALTERATION OF YOUR FILES, DATA, OR PROJECT BY REASON OF THE SOFTWARE'S OPERATION
 
-WHETHER BASED ON WARRANTY, CONTRACT, TORT (INCLUDING NEGLIGENCE), STRICT LIABILITY, OR ANY OTHER LEGAL THEORY, AND WHETHER OR NOT NAGASHI LIMITED HAS BEEN ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+WHETHER BASED ON WARRANTY, CONTRACT, TORT (INCLUDING NEGLIGENCE), STRICT LIABILITY, OR ANY OTHER LEGAL THEORY, AND WHETHER OR NOT NAGASHI LLC HAS BEEN ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-IN JURISDICTIONS THAT DO NOT ALLOW THE EXCLUSION OR LIMITATION OF LIABILITY FOR CONSEQUENTIAL OR INCIDENTAL DAMAGES, NAGASHI LIMITED'S LIABILITY SHALL BE LIMITED TO THE GREATEST EXTENT PERMITTED BY LAW.
+IN JURISDICTIONS THAT DO NOT ALLOW THE EXCLUSION OR LIMITATION OF LIABILITY FOR CONSEQUENTIAL OR INCIDENTAL DAMAGES, NAGASHI LLC'S LIABILITY SHALL BE LIMITED TO THE GREATEST EXTENT PERMITTED BY LAW.
 
-BECAUSE THE SOFTWARE IS MADE AVAILABLE FREE OF CHARGE UNDER AN OPEN-SOURCE LICENCE, THE FOREGOING LIMITATIONS ARE AN ESSENTIAL BASIS OF THE BARGAIN BETWEEN YOU AND NAGASHI LIMITED.
+BECAUSE THE SOFTWARE IS MADE AVAILABLE FREE OF CHARGE UNDER AN OPEN-SOURCE LICENCE, THE FOREGOING LIMITATIONS ARE AN ESSENTIAL BASIS OF THE BARGAIN BETWEEN YOU AND NAGASHI LLC.
 
 ---
 
 ## 9. Indemnification
 
-You agree to indemnify, defend, and hold harmless Nagashi Limited, Shannon Higgins, and their respective affiliates, officers, employees, agents, licensors, and service providers from and against any and all claims, liabilities, damages, judgements, awards, losses, costs, expenses, and fees (including reasonable attorneys' fees) arising out of or relating to:
+You agree to indemnify, defend, and hold harmless Nagashi LLC, Shannon Higgins, and their respective affiliates, officers, employees, agents, licensors, and service providers from and against any and all claims, liabilities, damages, judgements, awards, losses, costs, expenses, and fees (including reasonable attorneys' fees) arising out of or relating to:
 
 - Your use of or reliance on the Software
 - Your violation of these Terms
@@ -154,11 +154,11 @@ You agree to indemnify, defend, and hold harmless Nagashi Limited, Shannon Higgi
 
 ## 10. Privacy and Data Collection
 
-The Software operates locally on your machine. Nagashi Limited does not collect, transmit, or store any personal data, source code, specification files, registry data, or project content through normal operation of the Software.
+The Software operates locally on your machine. Nagashi LLC does not collect, transmit, or store any personal data, source code, specification files, registry data, or project content through normal operation of the Software.
 
 The only outbound network request made by the Software during normal operation is a read-only HTTP GET request to `https://registry.npmjs.org/lsd-forge/latest` to check for available updates. This request contains no user-identifying information beyond the standard HTTP headers sent by your system. The result is cached locally in your project's `.lsd/version-check.json` file.
 
-If you contact Nagashi Limited by email or other means, any personal information you provide will be handled in accordance with applicable privacy law and used solely to respond to your inquiry.
+If you contact Nagashi LLC by email or other means, any personal information you provide will be handled in accordance with applicable privacy law and used solely to respond to your inquiry.
 
 ---
 
@@ -166,11 +166,11 @@ If you contact Nagashi Limited by email or other means, any personal information
 
 ### 11.1 Software Updates
 
-Nagashi Limited may release new versions of the Software at any time. You are not obligated to update. The `forge init --upgrade` command is provided to facilitate safe adoption of new versions; its use is voluntary.
+Nagashi LLC may release new versions of the Software at any time. You are not obligated to update. The `forge init --upgrade` command is provided to facilitate safe adoption of new versions; its use is voluntary.
 
 ### 11.2 Changes to These Terms
 
-Nagashi Limited reserves the right to modify these Terms at any time. Changes will be indicated by an updated "Last updated" date at the top of this document and, where material, by publication of a notice in the Software's release notes or repository. Continued use of the Software after the effective date of revised Terms constitutes your acceptance of those Terms. If you do not agree to the revised Terms, you must discontinue use of the Software.
+Nagashi LLC reserves the right to modify these Terms at any time. Changes will be indicated by an updated "Last updated" date at the top of this document and, where material, by publication of a notice in the Software's release notes or repository. Continued use of the Software after the effective date of revised Terms constitutes your acceptance of those Terms. If you do not agree to the revised Terms, you must discontinue use of the Software.
 
 ---
 
@@ -178,7 +178,7 @@ Nagashi Limited reserves the right to modify these Terms at any time. Changes wi
 
 You may stop using the Software at any time by uninstalling it and removing associated files from your projects. There is no account to close.
 
-Nagashi Limited may, at its sole discretion and without liability, cease development or maintenance of the Software, remove the Software from the npm registry, or restrict access to the Software's source code repository at any time.
+Nagashi LLC may, at its sole discretion and without liability, cease development or maintenance of the Software, remove the Software from the npm registry, or restrict access to the Software's source code repository at any time.
 
 Termination of your use does not affect provisions of these Terms that by their nature should survive, including but not limited to Sections 4 (Intellectual Property), 6 (AI-Generated Content Disclaimer), 7 (Disclaimers of Warranty), 8 (Limitation of Liability), 9 (Indemnification), and 13 (Governing Law).
 
@@ -190,7 +190,7 @@ These Terms are governed by and construed in accordance with the laws of the Sta
 
 Any dispute, claim, or controversy arising out of or relating to these Terms or the Software that cannot be resolved informally shall be subject to the exclusive jurisdiction of the state and federal courts located in Carson City, Nevada. You consent to the personal jurisdiction of such courts and waive any objection to venue in such courts.
 
-Notwithstanding the foregoing, Nagashi Limited may seek injunctive or other equitable relief in any court of competent jurisdiction to protect its intellectual property rights.
+Notwithstanding the foregoing, Nagashi LLC may seek injunctive or other equitable relief in any court of competent jurisdiction to protect its intellectual property rights.
 
 ---
 
@@ -198,7 +198,7 @@ Notwithstanding the foregoing, Nagashi Limited may seek injunctive or other equi
 
 ### 14.1 Entire Agreement
 
-These Terms, together with the MIT License distributed with the Software, constitute the entire agreement between you and Nagashi Limited with respect to the Software and supersede all prior agreements, understandings, negotiations, and discussions, whether oral or written.
+These Terms, together with the MIT License distributed with the Software, constitute the entire agreement between you and Nagashi LLC with respect to the Software and supersede all prior agreements, understandings, negotiations, and discussions, whether oral or written.
 
 ### 14.2 Severability
 
@@ -206,15 +206,15 @@ If any provision of these Terms is found to be invalid, illegal, or unenforceabl
 
 ### 14.3 Waiver
 
-No failure or delay by Nagashi Limited in exercising any right under these Terms shall constitute a waiver of that right.
+No failure or delay by Nagashi LLC in exercising any right under these Terms shall constitute a waiver of that right.
 
 ### 14.4 Assignment
 
-You may not assign or transfer your rights or obligations under these Terms without the prior written consent of Nagashi Limited. Nagashi Limited may assign these Terms freely.
+You may not assign or transfer your rights or obligations under these Terms without the prior written consent of Nagashi LLC. Nagashi LLC may assign these Terms freely.
 
 ### 14.5 No Agency
 
-Nothing in these Terms creates a partnership, joint venture, agency, franchise, or employment relationship between you and Nagashi Limited.
+Nothing in these Terms creates a partnership, joint venture, agency, franchise, or employment relationship between you and Nagashi LLC.
 
 ---
 
@@ -223,11 +223,11 @@ Nothing in these Terms creates a partnership, joint venture, agency, franchise, 
 Questions, concerns, or notices regarding these Terms should be directed to:
 
 **Shannon Higgins**
-Nagashi Limited
+Nagashi LLC
 Carson City, Nevada, United States
 [shannonhiggins@outlook.com](mailto:shannonhiggins@outlook.com)
 [authori.us/lsd-forge](https://authori.us/lsd-forge)
 
 ---
 
-*These Terms of Service were last updated on June 11, 2026. The authoritative version of these Terms is published at [authori.us/lsd-forge](https://authori.us/lsd-forge). Nagashi Limited recommends that organisations deploying LSD FORGE in production environments have these Terms reviewed by qualified legal counsel in their jurisdiction.*
+*These Terms of Service were last updated on June 11, 2026. The authoritative version of these Terms is published at [authori.us/lsd-forge](https://authori.us/lsd-forge). Nagashi LLC recommends that organisations deploying LSD FORGE in production environments have these Terms reviewed by qualified legal counsel in their jurisdiction.*
