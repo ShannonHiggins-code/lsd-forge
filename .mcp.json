@@ -2,7 +2,7 @@
   "mcpServers": {
     "gitlab": {
       "command": "npx",
-      "args": ["-y", "@modelcontextprotocol/server-gitlab"]
+      "args": ["-y", "@modelcontextprotocol/server-gitlab@2025.4.25"]
     }
   }
 }
