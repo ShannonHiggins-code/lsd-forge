@@ -78,7 +78,7 @@ forge validate
 /forge-new
 ```
 
-The `/forge-new` slash command opens a guided 11-phase conversation. Your AI interprets your intent, builds each section with reasoning, derives edge cases from your happy path, runs an adversarial check, hardens the spec with RSC-AR, and delivers a compiled payload — all without leaving the chat.
+The `/forge-new` slash command opens a guided conversation (Phases 0 to 11). Your AI first checks whether the request belongs in an existing spec, then interprets your intent, builds each section with reasoning, derives edge cases from your happy path, runs an adversarial check, hardens the spec with RSC-AR, and delivers a compiled payload — all without leaving the chat.
 
 ```bash
 # 5. Open a new agent session and paste the compiled payload as the first message
@@ -98,10 +98,12 @@ The `/forge-new` slash command opens a guided 11-phase conversation. Your AI int
 ├── registry.json       Resource registry — AI populates on first session (services, artifacts, posture)
 └── skills/
     ├── forge-new.md        Guided spec authoring conversation — the primary authoring skill
+    ├── forge-sync.md       Spec drift detection: finds specs the code has moved past and updates them
     ├── rsc-ar.md           The FORGE hardening loop (Proposer → Adversary → Resolver)
     ├── spec-authoring.md   .logic format reference and lint rules
     ├── self-refinement.md  Self-correction and CoT verification patterns
-    └── onboarding.md       Discovery protocol — maps services and artifacts
+    ├── onboarding.md       Discovery protocol — maps services and artifacts
+    └── upgrade.md          Version upgrade protocol for forge init --upgrade
 ```
 
 Also installs:
@@ -109,15 +111,16 @@ Also installs:
   1. Staged `.logic` files are linted with `--strict` — blocks the commit on errors
   2. Staged code files are checked against the spec library with `forge touched --staged` — warns (non-blocking) if any staged file is authorized in an existing spec, prompting re-validation
 - **`lint:specs` script** in `package.json`
+- **Starter spec** at `specs/examples/LS-YYYY-001-example.logic`
 - **LSD block** prepended to any AI posture files found (`CLAUDE.md`, `.cursor/rules`, `.github/copilot-instructions.md`, and others)
-- **`/forge-new` shortcut** in the appropriate format for every detected AI tool:
+- **`/forge-new` and `/forge` shortcuts** in the appropriate format for each AI tool. `/forge-new` authors a spec; `/forge` is a one-command router to status, new, lint, compile, coverage, validate and sync.
 
-| Tool detected | Shortcut installed | Invocation |
+| Tool | Shortcuts installed | Invocation |
 |---|---|---|
-| Claude Code (`CLAUDE.md`) | `.claude/commands/forge-new.md` | `/forge-new` |
-| GitHub Copilot (`.github/copilot-instructions.md`) | `.github/prompts/forge-new.prompt.md` | `/forge-new` |
-| Cursor (`.cursor/rules`) | `.cursor/rules/forge-new.mdc` | `@forge-new` |
-| Windsurf (`.windsurf/rules`) | `.windsurf/rules/forge-new.md` | Cascade rule |
+| Claude Code (always installed) | `.claude/commands/forge-new.md`, `.claude/commands/forge.md` | `/forge-new`, `/forge` |
+| GitHub Copilot (`.github/copilot-instructions.md`) | `.github/prompts/forge-new.prompt.md`, `.github/prompts/forge.prompt.md` | `/forge-new`, `/forge` |
+| Cursor (`.cursor/rules`) | `.cursor/rules/forge-new.mdc`, `.cursor/rules/forge.mdc` | `@forge-new`, `@forge` |
+| Windsurf (`.windsurf/rules`) | `.windsurf/rules/forge-new.md`, `.windsurf/rules/forge.md` | Cascade rules |
 
 ---
 
@@ -268,27 +271,29 @@ Errors block compilation. Warnings do not — unless `--strict` is passed.
 
 ## The `/forge-new` authoring pipeline
 
-`/forge-new` is the primary way to author a spec. It runs in your AI chat as an 11-phase guided conversation. You describe what you want to build once — the AI does the rest.
+`/forge-new` is the primary way to author a spec. It runs in your AI chat as a guided conversation (Phases 0 to 11). You describe what you want to build once — the AI does the rest.
 
 ### What happens in the conversation
 
-**Phase 1 — Intent capture.** One open question: "What do you want to build?" No forms, no structure yet.
+**Phase 0: New or edit.** One open question: "What do you want to build or change?" The AI compares your description with every existing spec from `forge_spec_list`, by domain and by the files it would touch. If an existing spec already covers the area, it says so and switches to edit mode: it summarises that spec, runs only the phases for the sections you change, re-runs the adversarial self-check on the whole spec, and bumps the version. You confirm the routing decision before anything else happens.
 
-**Phase 2 — Interpretation.** The AI calls `forge_search` with your description to surface related specs, then shows its reading — domain, runtime, data stores, security sensitivity. Related specs are shown as dependency candidates. You correct the interpretation before any sections are touched.
+**Phase 1: Intent capture.** For a new spec, the AI shows its reading of your description in plain language: what it does, where it runs, what it reads and writes, and how security-sensitive it is. You correct the interpretation before any sections are touched.
 
-**Phase 3 — TARGET\_BOUNDARIES.** Before proposing files, the AI calls `forge_spec_list` and checks whether any proposed path is already authorized in another spec. Conflicts are surfaced before you confirm.
+**Phase 2: TARGET\_BOUNDARIES.** Before proposing files, the AI checks the `forge_spec_list` results for any proposed path that is already authorized in another spec. Conflicts are surfaced before you confirm.
 
-**Phase 4 — INTENT\_HAPPY\_PATH.** Steps are actor-prefixed and observable. Any step containing a banned phrase is rejected immediately with a specific rewrite offer — it will not proceed until the step is clean.
+**Phase 3: INTENT\_HAPPY\_PATH.** Steps are actor-prefixed and observable. Any step containing a banned phrase is rejected immediately with a specific rewrite offer, and developer jargon gets a plain-English rewrite offer. The conversation does not move on until every step is free of banned phrases.
 
-**Phase 5 — EDGE\_CRITICAL\_UNHAPPY\_PATH.** Edge cases are derived one-per-step from the confirmed happy path, each labelled with the step it mirrors. Generic templates are not used. Every external call, every write, every user input gets its corresponding failure case.
+**Phase 4: EDGE\_CRITICAL\_UNHAPPY\_PATH.** Edge cases are derived one per step from the confirmed happy path, each labelled with the step it mirrors. Generic templates are not used. Every external call, every write, every user input gets its corresponding failure case.
 
-**Phases 6–8 — Regression fence, spec dependencies, context debt.** The AI surfaces related specs and asks which are prerequisites (`requires: []`). Security-sensitive domains cannot leave `CONTEXT_DEBT_NOTE` empty.
+**Phases 5 to 7: Regression fence, spec dependencies, context debt.** The AI surfaces related specs and asks which are prerequisites (`requires: []`). Security-sensitive domains cannot leave `CONTEXT_DEBT_NOTE` empty.
 
-**Phase 9 — Adversarial self-check.** Two layers before writing:
+**Phase 8: Adversarial self-check.** Two layers before writing:
 - Structural compliance (authorized paths, banned phrases, step count, edge coverage)
 - Agent perspective ("can I implement every step without a judgment call not stated here?")
 
-**Phases 10–11 — RSC-AR hardening → compile → deliver.** The draft goes straight into RSC-AR Phase 2 (Adversary). After the Resolver converges, the hardened spec is saved, linted, validated, and compiled. The payload is delivered with a clear close: *"This session is complete. Open a new session. Paste the payload. That agent implements."*
+**Phase 9: Write and verify.** The AI calls `forge_new` to write the file, then `forge_lint` and `forge_validate`. A lint failure sends it back to the section at fault.
+
+**Phases 10 and 11: RSC-AR hardening, compile, deliver.** The draft goes straight into RSC-AR Phase 2 (Adversary). After the Resolver converges, the hardened spec is saved, linted, and compiled. The payload is delivered with a clear close: *"This session is complete. Open a new session. Paste the payload. That agent implements."*
 
 ### Invoking `/forge-new`
 
@@ -325,7 +330,10 @@ Each phase gates on confirmation. If Phase 3 introduces new assumptions, it re-e
 ## CLI reference
 
 ### `forge init`
-Bootstrap LSD FORGE into the current project. Run once per project. Detects Node/Python/Go/Rust stacks, finds AI posture files, writes `.lsd/`, installs `/forge-new` shortcuts for detected AI tools, augments posture files, installs pre-commit hook.
+Bootstrap LSD FORGE into the current project. Run once per project. Detects Node/Python/Go/Rust stacks, finds AI posture files, writes `.lsd/`, installs `/forge-new` and `/forge` shortcuts for detected AI tools, augments posture files, installs pre-commit hook.
+
+### `forge init --upgrade`
+Refresh an existing install after updating the package: rewrites `.lsd/onboarding.md`, `.lsd/skills/`, the shortcut files and the LSD FORGE section of the pre-commit hook. Never touches `.lsd/config.json` (apart from stamping the new `lsd_version`), `.lsd/registry.json`, or any spec. Requires an existing `.lsd/config.json`.
 
 ### `forge new`
 CLI fallback for authoring a spec without an AI chat. Starts with a plain-language description, interprets intent, and suggests content for each section with lettered/numbered options. Use `/forge-new` in chat when a connected AI is available — it produces a better spec.
@@ -337,13 +345,14 @@ forge new --json     # JSON output (file path + lint findings)
 
 ### `forge lint [path]`
 ```bash
-forge lint                         # Lint all .logic files in ./specs/
-forge lint specs/                  # Lint a directory
+forge lint                         # Lint the .logic files directly inside ./specs/
+forge lint specs/                  # Lint a directory (top level only)
 forge lint specs/LS-2026-001.logic # Lint a single file
 forge lint --strict                # Warnings become errors
 forge lint --plain                 # No colour/icons — for CI logs
 forge lint --json                  # Machine-readable output
 ```
+Subfolders are not scanned, so `forge lint specs/` does not reach `specs/examples/`. Lint each folder that holds specs.
 
 ### `forge compile <file>`
 ```bash
@@ -354,7 +363,7 @@ forge compile specs/LS-2026-001.logic --json
 Lint runs first. Specs with errors do not compile.
 
 ### `forge status`
-Registry health: whether `.lsd/` is initialised, how many specs exist, which registered services have no spec.
+Registry health: whether `.lsd/` is initialised, how many specs exist, which registered services have no spec. Also shows a notice when a newer `lsd-forge` is published on npm (checked at most once every 24 hours).
 
 ### `forge coverage [--threshold n]`
 Spec coverage gap report. `--threshold 80` exits 1 if fewer than 80% of registered services have a spec — use as a CI gate.

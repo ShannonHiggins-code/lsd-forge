@@ -37,7 +37,7 @@ RETURN FORMAT (fill every field, paste actual output — do not claim pass witho
 Step completion: [each step: "done" or "skipped: reason"]
 Files changed: [git diff --name-only output]
 Diff line count: [git diff --stat output]
-Lint output: [node bin/lsd.js lint specs/examples/ --plain — paste actual output]
+Lint output: [node bin/forge.js lint specs/examples/ --plain — paste actual output]
 New symbols: [new function/const names introduced]
 Banned pattern check: [grep -n "console\.log" <lib-file> output (should be empty for non-bin files)]
 ```
@@ -50,7 +50,7 @@ Never trust Haiku's summary. Run these checks regardless of what Haiku reports.
 |-------|---------|----------------|
 | 1. Scope | `git diff --name-only` | Only expected files |
 | 1. Size | `git diff --stat` | Line count proportional to task |
-| 2. Lint gate | `node bin/lsd.js lint specs/examples/ --plain` | Exit code 0 |
+| 2. Lint gate | `node bin/forge.js lint specs/examples/ --plain` | Exit code 0 |
 | 3. console.log | `grep -n "console\.log" <lib-file>` | Empty (for non-bin files) |
 | 3. ESM | `grep -n "^import " <file>` | Empty |
 | 3. default export | `grep -n "^module\.exports\s*=\s*function" <file>` | Empty (named exports only) |

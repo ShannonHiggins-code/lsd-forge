@@ -64,7 +64,7 @@ All run in parallel; collect all results before running verification.
 **Step format rule:** Every numbered step must end with `→ verify: [exact grep command]` naming the symbol that proves the step was completed.
 
 ```
-You are executing a well-defined task on lsd-engine (Node.js CLI, CommonJS, no framework — a lint/compile tool for .logic requirement files for AI coding agents).
+You are executing a well-defined task on lsd-forge (Node.js CLI, CommonJS, no framework — a lint/compile tool for .logic requirement files for AI coding agents).
 
 CONVENTIONS (read before anything else):
 - CommonJS only — require() and module.exports, never import/export or ESM syntax
@@ -74,7 +74,7 @@ CONVENTIONS (read before anything else):
 - Rules in linter/rules/ export { check(parsed) } only — check() returns findings array [], never throws
 - Finding shape: { severity: 'error'|'warning', rule: string, message: string, fix: string }
 - Library modules (linter/, compiler/) must NOT write to stdout/stderr — return data only
-- No console.log in library code (bin/lsd.js may use it freely; nothing else)
+- No console.log in library code (bin/forge.js may use it freely; nothing else)
 - No new external dependencies — use only Node.js builtins and linter/parser.js helpers
 - Error handling: try/catch around file I/O, return structured error objects, don't throw from check()
 - Comments: only when WHY is non-obvious
@@ -96,7 +96,7 @@ RETURN FORMAT (paste actual command output — do not claim pass without running
 Step completion: [each step: "done — grep confirms [symbol] at line N" or "skipped: reason"]
 Files changed: [paste: git diff --name-only]
 Diff stat: [paste: git diff --stat]
-Lint output: [paste: node bin/lsd.js lint specs/examples/ --plain]
+Lint output: [paste: node bin/forge.js lint specs/examples/ --plain]
 New symbols: [comma-separated list of new function/const/module.exports names]
 Banned patterns: [paste: grep -n "console\.log" [lib-file] (empty = pass) && grep -n "^import " [file] (empty = pass)]
 ```
@@ -112,7 +112,7 @@ Run verification commands in parallel where independent.
 |-------|---------|----------------|
 | 1a. Scope | `git diff --name-only` | Only expected files changed |
 | 1b. Size | `git diff --stat` | Line count proportional to task |
-| 2. Lint gate | `node bin/lsd.js lint specs/examples/ --plain` | Exit code 0, no errors |
+| 2. Lint gate | `node bin/forge.js lint specs/examples/ --plain` | Exit code 0, no errors |
 | 3a. console.log | `grep -n "console\.log" [lib-file]` | Empty (for non-bin files) |
 | 3b. ESM | `grep -n "^import " [file]` | Empty |
 | 3c. default export | `grep -n "^module\.exports\s*=" [file]` | Must be `{ ... }` object, not a function |

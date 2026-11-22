@@ -23,7 +23,7 @@ When a lint rule isn't firing (or fires incorrectly), the parser produces wrong 
 ### Rule not firing when it should
 
 1. Verify the rule file name ends in `.js` and lives in `linter/rules/` — the auto-loader skips anything without a `.js` extension.
-2. Confirm the rule uses a named export object: `module.exports = { name, check }`. A rule that exports a bare function (`module.exports = function check(...)`) will be loaded but `check()` won't be called → silent skip.
+2. Confirm the rule uses a named export object: `module.exports = { check }` (the engine does not read a `name` property). A rule that exports a bare function (`module.exports = function check(...)`) is still loaded, but `rule.check` is undefined, so `lintFile()` throws `TypeError: rule.check is not a function` for every spec. `forge lint` prints that as `Error: ...` and exits 2.
 3. Confirm `check(parsed)` returns an array — even on zero findings it must return `[]`. Returning `undefined` causes a crash in `lintFile`.
 4. Log the parsed input to diagnose what the rule actually sees:
    ```bash

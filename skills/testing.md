@@ -53,10 +53,11 @@ Add to `specs/examples/` following the naming convention `LS-YYYY-NNN-<slug>.log
 Create `specs/fixtures/bad-<rule-name>.logic`. Deliberately violate only that rule. Verify it fires:
 ```bash
 node bin/forge.js lint specs/fixtures/bad-<rule-name>.logic --plain
-# Expected: exit code 1, error/warning message mentioning the rule and a fix hint
+# Expected: error/warning message mentioning the rule and a fix hint
+# Exit code 1 for an error rule; a warning rule exits 0 unless you add --strict
 ```
 
-Failure fixtures live in `specs/fixtures/` and are NOT run by `npm test` — they are verified manually or in CI with explicit paths.
+Failure fixtures live in `specs/fixtures/` and are NOT run by `npm test`. Verify them manually with explicit paths. CI does not run them: the `lint-specs` job lints `specs/`, and `forge lint` does not scan subfolders. A warning-severity rule (such as `stale-validation`) exits 0 on its fixture unless you add `--strict`.
 
 ---
 
@@ -94,7 +95,7 @@ node bin/forge.js lint specs/examples/ --plain; echo "Exit: $?"
 node -e "const {parse}=require('./linter/parser');console.log(JSON.stringify(parse('specs/examples/LS-2026-001-auth-login-redirect.logic'),null,2))"
 
 # Test with a malformed file — should return parseError, not throw:
-node -e "const {parse}=require('./linter/parser');const r=parse('specs/fixtures/edge-bad-yaml.logic');console.log(r.parseError)"
+node -e "const {parse}=require('./linter/parser');const r=parse('specs/fixtures/edge-malformed-yaml.logic');console.log(r.parseError)"
 ```
 
 Parser `parse()` must never throw. It must return `{ parseError: string }` on any read or YAML failure.

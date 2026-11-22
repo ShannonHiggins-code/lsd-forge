@@ -103,7 +103,8 @@ specs/fixtures/bad-<rule-name>.logic
 Deliberately violate only this rule. Verify it fires:
 ```bash
 node bin/forge.js lint specs/fixtures/bad-<rule-name>.logic --plain
-# Expected: exit code 1, error/warning with your rule's name and fix hint
+# Expected: error/warning with your rule's name and fix hint
+# Exit code 1 for an error rule; a warning rule exits 0 unless you add --strict
 echo "Exit: $?"
 ```
 
@@ -151,6 +152,6 @@ In `check(parsed)`:
 |------|----------|----------------|
 | `required-sections.js` | error | All 5 required sections present |
 | `forbidden-overlap.js` | error | No file in both `authorized_files` and `forbidden_files` |
-| `unhappy-path-ratio.js` | warning | EDGE steps ≥ 50% of happy path steps |
-| `ambiguous-language.js` | warning | No "should", "may", "sometimes" in intent sections |
-| `stale-validation.js` | warning | `validated_against` within 90 days |
+| `unhappy-path-ratio.js` | error | EDGE steps ≥ `ceil(happy path steps / 2)` |
+| `ambiguous-language.js` | error | No phrase from its exported `AMBIGUOUS_PHRASES` list (e.g. "handle appropriately", "as needed"; CLAUDE.md section 4 lists them all) in `INTENT_HAPPY_PATH` or `EDGE_CRITICAL_UNHAPPY_PATH` |
+| `stale-validation.js` | warning | `validated_against` within `STALE_DAYS` (30) days of today |
